@@ -145,7 +145,7 @@ SELECT breakdown_key, SUM(value)
 FROM (
     SELECT t.id, 
            ANY(t.value) AS value, 
-           MAX_BY(s.timestamp, s.breakdown_key) AS breakdown_key
+           MAX_BY(s.breakdown_key, s.timestamp) AS breakdown_key
     FROM source_reports s
     JOIN trigger_reports t
     ON s.match_key = t.match_key
