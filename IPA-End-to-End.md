@@ -141,12 +141,19 @@ _Source and trigger events_ are represented by _source and trigger reports_ (mor
 As a SQL query, we can approximate _last touch attribution_ as:
 
 ```
-SELECT   s.breakdown_key, count(t.value), sum(t.value)
-FROM     source_reports s
-JOIN     trigger_reports t on s.match_key = t.match_key
-WHERE    s.timestamp < t.timestamp
-AND      s.attribution_constraint_id = t.attribution_constraint_id
-GROUP BY s.breakdown_key;
+SELECT breakdown_key, SUM(value)
+FROM (
+    SELECT t.id, 
+           ANY(t.value) AS value, 
+           MAX_BY(s.timestamp, s.breakdown_key) AS breakdown_key
+    FROM source_reports s
+    JOIN trigger_reports t
+    ON s.match_key = t.match_key
+    WHERE s.timestamp < t.timestamp
+    AND s.attribution_constraint_id = t.attribution_constraint_id
+    GROUP BY t.id
+)
+GROUP BY breakdown_key;
 ```
 
 ### 1.2.1 Types of Queries
