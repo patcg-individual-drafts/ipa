@@ -143,8 +143,8 @@ As a SQL query, we can approximate _last touch attribution_ as:
 ```
 SELECT breakdown_key, SUM(value)
 FROM (
-    SELECT t.id, 
-           ANY(t.value) AS value, 
+    SELECT t.id,
+           ANY(t.value) AS value,
            MAX_BY(s.breakdown_key, s.timestamp) AS breakdown_key
     FROM source_reports s
     JOIN trigger_reports t
@@ -346,9 +346,9 @@ To give a high level overview of what happens in the MPC:
     2. _Helper party<sub>j</sub>_ validates the report and builds a `generic_report` from their decrypted shares. [Section 2.8.1 Validating reports](#281-validating-reports) expands on the details.
 2. The _helper parties_ supply these shares as private inputs into the MPC.
 3. The _helper parties_ sort the _generic reports_ by `match_key`, `attribution_constraint_id`, then `timestamp`.
-    3. We explore a handful of possible optimizations for this in section [Technical Discussion and Remarks](#3-technical-discussion-and-remarks).
+    1. We explore a handful of possible optimizations for this in section [Technical Discussion and Remarks](#3-technical-discussion-and-remarks).
 4. The MPC also sets a secret shared helper bit to indicate if a row has the same `(match_key, attribution_constraint_id)` as the one before it.
-    4. This could happen in a customized sorting protocol designed to also create these bits, or after the sort as a standalone step.
+    1. This could happen in a customized sorting protocol designed to also create these bits, or after the sort as a standalone step.
 5. The MPC computes an _oblivious attribution_, a protocol we describe below that uses a tree-like pattern to obliviously attribute _trigger values_ to the nearest preceding _source report_ with the same _match key_.
 6. The MPC enforces a sensitivity cap on the sum of _trigger values_ from a particular _match key_.
 7. The MPC adds the `trigger_value` of the attributed _trigger report_ to the sum corresponding to the `breakdown_key `of the _source report_ to which it was attributed.
@@ -383,8 +383,7 @@ struct {
     int is_trigger_report_share;
     int breakdown_key_share;
     int trigger_value_share;
-    } generic_report_share
-}
+} generic_report_share
 ```
 
 _Source reports_ do not have any associated `trigger_value`, and _trigger reports_ do not have any associated `breakdown_key`, so for these each _helper party_ can just set their share to zero. Additionally, each _helper party_ will initially know which reports are _source reports_ and which are _trigger reports_, and set the `is_trigger_report` accordingly. Without loss of generality, we can assign _helper party<sub>1</sub>_ to set the value of `is_trigger_report` to 1 for _trigger reports_, and all other _helper parties_ set the value to 0. (All _helper parties_ set the value to 0 for _source reports_.)
@@ -1899,7 +1898,7 @@ After the final iteration, we can then sum up the credit for each _breakdown key
 
 After computing the aggregates within each category, the _helper parties_ P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> generate additive noise to ensure DP on the user level. The amount of noise added depends on the sensitivity, i.e. on the cap of how much an individual _match key_ owner can contribute.
 
-The noise is generated within an MPC protocol. This could be done either by having each party sample noise independently then add it to the secret shared aggregated value. This is a simple approach but has the drawback that the privacy guarantees in case of a corrupted MPC party are lower since the corrupted party will know their share of the noise and deduct it from the aggregated value. A better but more complicated approach is to run a secure coin tossing protocol between parties P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> where the coins are private and then use these coins to run a noise sampling algorithm within MPC to generate secret shares of the DP noise. This noise is then added to the secret shared aggregated value. Using the second approach, a malicious party cannot manipulate the protocol to see a noisy aggregated value with less noise. Hence, the privacy guarantees match the amount of DP noise generated and added as specified in the protocol description even when one party is malicious.
+The noise is generated within an MPC protocol. This could be done by having each party sample noise independently then add it to the secret shared aggregated value. This is a simple approach but has the drawback that the privacy guarantees in case of a corrupted MPC party are lower since the corrupted party will know their share of the noise and deduct it from the aggregated value. A better but more complicated approach is to run a secure coin tossing protocol between parties P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> where the coins are private and then use these coins to run a noise sampling algorithm within MPC to generate secret shares of the DP noise. This noise is then added to the secret shared aggregated value. Using the second approach, a malicious party cannot manipulate the protocol to see a noisy aggregated value with less noise. Hence, the privacy guarantees match the amount of DP noise generated and added as specified in the protocol description even when one party is malicious.
 
 
 # 3. Technical Discussion and Remarks
