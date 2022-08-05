@@ -140,7 +140,7 @@ _Source and trigger events_ are represented by _source and trigger reports_ (mor
 
 As a SQL query, we can approximate _last touch attribution_ as:
 
-```
+```sql
 SELECT breakdown_key, SUM(value)
 FROM (
     SELECT t.id,
