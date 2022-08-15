@@ -12,93 +12,52 @@ This document provides an end-to-end overview of that protocol, focusing primari
 
 ## Table of Contents
 
-<ul>
-<li> <a href="#1-overview">1. Overview</a>
-    <ul>
-    <li><a href="#11-definitions">1.1 Definitions</a>
-        <ul>
-        <li><a href="#111-Parties-Involved">1.1.1 Parties Involved</a></li>
-        <li><a href="#112-Other-Key-Terms">1.1.2 Other Key Terms</a></li>
-        </ul>
-    </li>
-    <li><a href="#12-Attribution-Measurement">1.2. Attribution Measurement</a>
-        <ul>
-        <li><a href="#121-Types-of-Queries">1.2.1 Types of Queries</a></li>
-        </ul>
-    </li>
-    <li><a href="#13-Overview-of-MPC-Security-Model">1.3 Overview of MPC Security Model</a></li>
-    <li><a href="#14-Differential-Privacy">1.4 Differential Privacy</a></li>
-        <ul>
-        <li><a href="#141-Differentially-Private-Aggregate-Queries">1.4.1 Differentially Private Aggregate Queries</a></li>
-            <ul>
-            <li><a href="#1411-Sensitivity-Capping">1.4.1.1 Sensitivity Capping</a></li>
-            <li><a href="#1412-Differentially-Private-Noise">1.4.1.2 Differentially Private Noise</a></li>
-            </ul>
-        </li>
-        <li><a href="#142-Differential-Privacy-Budget-Management">1.4.2 Differential Privacy Budget Management</a></li>
-        </ul>
-    </li>
-    </ul>
-</li>
-<li><a href="#2-Protocol">2. Protocol</a>
-    <ul>
-    <li><a href="#21-Setup">2.1 Setup</a></li>
-        <ul>
-        <li><a href="#211-Commitments">2.1.1 Commitments</a></li>
-        </ul>
-    </li>
-    <li><a href="#22-Client-Side-Setting-the-match-key">2.2 Client Side: Setting the match key</a></li>
-    <li><a href="#23-Client-Side-Getting-the-encrypted-match-key-report">2.3 Client Side: Getting the encrypted match key report</a></li>
-    <li><a href="#24-Constraints-on-encrypted-match-keys">2.4 Constraints on encrypted match keys</a></li>
-    <li><a href="#25-Clarifying-allowed-uses">2.5 Clarifying allowed uses</a></li>
-    <li><a href="#26-Additional-Data">2.6 Additional Data</a>
-        <ul>
-        <li><a href="#261-Additional-data-associated-with-source-reports">2.6.1 Additional data associated with source reports</a></li>
-        <li><a href="#262-Additional-data-associated-with-trigger-reports">2.6.2 Additional data associated with trigger reports</a></li>
-        </ul>
-    </li>
-    <li><a href="#27-Generating-source-and-trigger-reports-by-the-report-collector">2.7 Generating source and trigger reports by the report collector</a></li>
-    <li><a href="#28-Secure-Multi-Party-Computation-between-a-helper-party-network-P1-P2-P3">2.8 Secure Multi Party Computation between a helper party network (P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>)</a></li>
-        <ul>
-        <li><a href="#281-Validating-reports">2.8.1 Validating reports</a></li>
-        <li><a href="#282-Oblivious-source-and-trigger-reports">2.8.2 Oblivious source and trigger reports</a></li>
-        <li><a href="#283-Oblivious-Sorting">2.8.3 Oblivious Sorting</a></li>
-        <li><a href="#284-Oblivious-Last-Touch-Attribution">2.8.4 Oblivious Last Touch Attribution</a></li>
-            <ul>
-            <li><a href="#2841-Interaction-Pattern">2.8.4.1 Interaction Pattern</a></li>
-            <li><a href="#2842-Last-Touch-Attribution">2.8.4.2 Last Touch Attribution</a></li>
-            </ul>
-        </li>
-        <li><a href="#285-User-Level-Sensitivity-Capping">2.8.5 User Level Sensitivity Capping</a></li>
-        <li><a href="#286-Computing-the-Aggregates">2.8.6 Computing the Aggregates</a></li>
-            <ul>
-            <li><a href="#2861-DP-Noise-Addition">2.8.6.1 DP Noise Addition</a></li>
-            </ul>
-        </li>
-        </ul>
-    </li>
-    </ul>
-<li><a href="#3-Technical-Discussion-and-Remarks">3. Technical Discussion and Remarks</a>
-    <ul>
-    <li><a href="#31-Optimizations">3.1 Optimizations</a></li>
-        <ul>
-        <li><a href="#311-Two-Party-Secret-Sharing">3.1.1 Two Party Secret Sharing</a></li>
-        <li><a href="#312-Match-Key-Compression">3.1.2 Match Key Compression</a></li>
-        <li><a href="#313-Presorting-by-Timestamp-and-Attribution-Constraint-ID">3.1.3 Presorting by Timestamp and Attribution Constraint ID</a></li>
-        <li><a href="#314-Computing-the-Aggregation-for-Large-Amount-of-Breakdowns">3.1.4 Computing the Aggregation for Large Amount of Breakdowns</a></li>
-        </ul>
-    </li>
-    <li><a href="#32-Other-Approaches-to-DP-or-MPC">3.2 Other Approaches to DP or MPC</a>
-        <ul>
-        <li><a href="#321-Privacy-Preserving-Mean-and-Covariance-Estimation">3.2.1 Privacy Preserving Mean and Covariance Estimation</a></li>
-        </ul>
-    </li>
-    <li><a href="#33-Transparency-of-Queries">3.3 Transparency of Queries</a></li>
-    <li><a href="#34-Oblivious-Algorithms">3.4 Oblivious Algorithms</a></li>
-    </ul>
-</li>
-<li><a href="#4-Thanks-and-Acknowledgements">4. Thanks and Acknowledgements</a></li>
-</ul>
+* [IPA End to End Protocol](#ipa-end-to-end-protocol)
+* [1. Overview](#1-overview)
+  * [Table of Contents](#table-of-contents)
+  * [1.1 Definitions](#11-definitions)
+    * [1.1.1 Parties Involved](#111-parties-involved)
+    * [1.1.2 Other Key Terms](#112-other-key-terms)
+  * [1.2 Attribution Measurement](#12-attribution-measurement)
+    * [1.2.1 Types of Queries](#121-types-of-queries)
+  * [1.3 Overview of MPC Security Model](#13-overview-of-mpc-security-model)
+  * [1.4 Differential Privacy](#14-differential-privacy)
+    * [1.4.1 Differentially Private Aggregate Queries](#141-differentially-private-aggregate-queries)
+      * [1.4.1.1 Sensitivity Capping](#1411-sensitivity-capping)
+      * [1.4.1.2 Differentially Private Noise](#1412-differentially-private-noise)
+    * [1.4.2 Differential Privacy Budget Management](#142-differential-privacy-budget-management)
+* [2. Protocol](#2-protocol)
+  * [2.1 Setup](#21-setup)
+    * [2.1.1 Commitments](#211-commitments)
+  * [2.2 Client Side: Setting the _match key_](#22-client-side-setting-the-match-key)
+  * [2.3 Client Side: Getting the encrypted _match key_ report](#23-client-side-getting-the-encrypted-match-key-report)
+  * [2.4 Constraints on encrypted _match keys_](#24-constraints-on-encrypted-match-keys)
+  * [2.5 Clarifying allowed uses](#25-clarifying-allowed-uses)
+  * [2.6 Additional Data](#26-additional-data)
+    * [2.6.1 Additional data associated with _source reports_](#261-additional-data-associated-with-source-reports)
+    * [2.6.2 Additional data associated with _trigger reports_](#262-additional-data-associated-with-trigger-reports)
+  * [2.7 Generating _source_ and _trigger reports_ by the _report collector_](#27-generating-source-and-trigger-reports-by-the-report-collector)
+  * [2.8 Secure Multi Party Computation between a _helper party network_ (P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>)](#28-secure-multi-party-computation-between-a-helper-party-network-psub1sub-psub2sub-psub3sub)
+    * [2.8.1 Validating reports](#281-validating-reports)
+    * [2.8.2 Oblivious _source_ and _trigger reports_](#282-oblivious-source-and-trigger-reports)
+    * [2.8.3 Oblivious Sorting](#283-oblivious-sorting)
+    * [2.8.4 Oblivious Last Touch Attribution](#284-oblivious-last-touch-attribution)
+      * [2.8.4.1 Interaction Pattern](#2841-interaction-pattern)
+      * [2.8.4.2 _Last Touch Attribution_](#2842-last-touch-attribution)
+    * [2.8.5 User Level Sensitivity Capping](#285-user-level-sensitivity-capping)
+    * [2.8.6 Computing the Aggregates](#286-computing-the-aggregates)
+      * [2.8.6.1 DP Noise Addition](#2861-dp-noise-addition)
+* [3. Technical Discussion and Remarks](#3-technical-discussion-and-remarks)
+  * [3.1 Optimizations](#31-optimizations)
+    * [3.1.1 Two Party Secret Sharing](#311-two-party-secret-sharing)
+    * [3.1.2 _Match Key_ Compression](#312-match-key-compression)
+    * [3.1.3 Presorting by Timestamp and Attribution Constraint ID](#313-presorting-by-timestamp-and-attribution-constraint-id)
+    * [3.1.4 Computing the Aggregation for Large Amount of Breakdowns](#314-computing-the-aggregation-for-large-amount-of-breakdowns)
+  * [3.2 Other Approaches to DP or MPC](#32-other-approaches-to-dp-or-mpc)
+    * [3.2.1 Privacy Preserving Mean and Covariance Estimation](#321-privacy-preserving-mean-and-covariance-estimation)
+  * [3.3 Transparency of Queries](#33-transparency-of-queries)
+  * [3.4 Oblivious Algorithms](#34-oblivious-algorithms)
+* [4. Thanks and Acknowledgements](#4-thanks-and-acknowledgements)
 
 ## 1.1 Definitions
 
