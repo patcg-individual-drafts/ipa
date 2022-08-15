@@ -18,10 +18,9 @@ jobs:
         t=$(mktemp)
         python3 toc.py "$FILE" > "$t"
         mv "$t" "$FILE"
-        git add "$FILE"
-        git -c user.name="ToC Bot" -c user.email="toc@example.com" commit -am "Update ToC" "$FILE"
+        git -c user.name="ToC Bot" -c user.email="toc@example.com" commit -m "Update ToC" "$FILE"
 
     - name: "Push Changes"
-      if: ${{ github.token }}
+      if: ${{ github.ref_type == 'branch' }}
       run: |
-        git push
+        git push origin "${{ github.ref }}"
