@@ -29,7 +29,22 @@ def href(title):
 
 
 parser = argparse.ArgumentParser(description="Add a markdown ToC")
-parser.add_argument("-d", "--depth", dest="depth", type=ord, default=3, help="Maximum heading level to include")
+parser.add_argument(
+    "-d",
+    "--depth",
+    dest="depth",
+    type=ord,
+    default=3,
+    help="Maximum heading level to include",
+)
+parser.add_argument(
+    "-t",
+    "--title",
+    dest="titles",
+    action="append",
+    default=["table of contents", "Table of Contents"],
+    help="Title of ToC section",
+)
 parser.add_argument("file", nargs=1, help="Markdown file")
 args = parser.parse_args()
 
@@ -53,7 +68,7 @@ intoc = False
 for line in input(files=(args.file)):
     if line.startswith("#"):
         title = line.strip("#").strip().lower()
-        intoc = title == "table of contents"
+        intoc = title in args.titles
         if intoc:
             print(line.rstrip())
             print()
