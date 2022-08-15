@@ -13,13 +13,13 @@ jobs:
     - name: "Checkout"
       uses: actions/checkout@v2
 
-    - name: "Cleanup"
+    - name: "Update Table of Contents"
       run: |
         t=$(mktemp)
         python3 toc.py "$FILE" > "$t"
         mv "$t" "$FILE"
         git add "$FILE"
-        git -c user.name "ToC Bot" -c user.email "toc@example.com" commit -am "Update ToC" "$FILE"
+        git -c user.name="ToC Bot" -c user.email="toc@example.com" commit -am "Update ToC" "$FILE"
 
     - name: "Push Changes"
       if: ${{ github.token }}
