@@ -1,0 +1,27 @@
+name: "Perform Initial Repository Setup"
+
+on: [push]
+
+env:
+  FILE: IPA-End-to-End.md
+
+jobs:
+  setup:
+    name: "Update TOC"
+    runs-on: ubuntu-latest
+    steps:
+    - name: "Checkout"
+      uses: actions/checkout@v2
+
+    - name: "Cleanup"
+      run: |
+        t=$(mktemp)
+        python3 toc.py "$FILE" > "$t"
+        mv "$t" "$FILE"
+        git add "$FILE"
+        git -c user.name "ToC Bot" -c user.email "toc@example.com" commit -am "Update ToC" "$FILE"
+
+    - name: "Push Changes"
+      if: ${{ github.token }}
+      run: |
+        git push

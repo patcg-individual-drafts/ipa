@@ -10,7 +10,7 @@ Interoperable Private Attribution (IPA) is a proposal for a new web platform API
 
 This document provides an end-to-end overview of that protocol, focusing primarily on the MPC performed by the _helper parties_. For exploring an MPC based approach, we have made several design choices in favor of simplicity. This is especially true for our approach to DP as well as the focus on _last touch attribution_. We intend to improve the functionality of IPA by adding other approaches to DP and attribution as IPA progresses.
 
-This document has the following structure:
+## Table of Contents
 
 <ul>
 <li> <a href="#1-overview">1. Overview</a>
