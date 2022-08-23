@@ -4,106 +4,60 @@ Erik Taubeneck ([@eriktaubeneck](https://github.com/eriktaubeneck)), Martin Thom
 
 Originally posted on 2022/07/28.
 
-#  1. Overview
+# Overview
 
 Interoperable Private Attribution (IPA) is a proposal for a new web platform API for advertising attribution. It does so by proposing two new user-agent APIs: 1) a `set_match_key()` API, and 2) a `get_encrypted_match_key()` API. The _match keys_ which leave the _user agent_ are always encrypted towards a _privacy preserving measurement_ system, i.e. a distributed multi-party computation (MPC) operated by _helper parties_ who are only trusted to not collude. The _helper parties_ that operate this privacy preserving measurement system participate in a protocol to produce an aggregate and differentially private attribution result. Our goal is that a web platform which implements this API only needs to trust the _helper parties_ to not collude in order to have assurance that the API does not enable cross-context tracking. (The PATCG is working on a threat model, and our goal is that IPA will satisfy that model.)
 
 This document provides an end-to-end overview of that protocol, focusing primarily on the MPC performed by the _helper parties_. For exploring an MPC based approach, we have made several design choices in favor of simplicity. This is especially true for our approach to DP as well as the focus on _last touch attribution_. We intend to improve the functionality of IPA by adding other approaches to DP and attribution as IPA progresses.
 
-This document has the following structure:
+## Table of Contents
 
-<ul>
-<li> <a href="#1-overview">1. Overview</a>
-    <ul>
-    <li><a href="#11-definitions">1.1 Definitions</a>
-        <ul>
-        <li><a href="#111-Parties-Involved">1.1.1 Parties Involved</a></li>
-        <li><a href="#112-Other-Key-Terms">1.1.2 Other Key Terms</a></li>
-        </ul>
-    </li>
-    <li><a href="#12-Attribution-Measurement">1.2. Attribution Measurement</a>
-        <ul>
-        <li><a href="#121-Types-of-Queries">1.2.1 Types of Queries</a></li>
-        </ul>
-    </li>
-    <li><a href="#13-Overview-of-MPC-Security-Model">1.3 Overview of MPC Security Model</a></li>
-    <li><a href="#14-Differential-Privacy">1.4 Differential Privacy</a></li>
-        <ul>
-        <li><a href="#141-Differentially-Private-Aggregate-Queries">1.4.1 Differentially Private Aggregate Queries</a></li>
-            <ul>
-            <li><a href="#1411-Sensitivity-Capping">1.4.1.1 Sensitivity Capping</a></li>
-            <li><a href="#1412-Differentially-Private-Noise">1.4.1.2 Differentially Private Noise</a></li>
-            </ul>
-        </li>
-        <li><a href="#142-Differential-Privacy-Budget-Management">1.4.2 Differential Privacy Budget Management</a></li>
-        </ul>
-    </li>
-    </ul>
-</li>
-<li><a href="#2-Protocol">2. Protocol</a>
-    <ul>
-    <li><a href="#21-Setup">2.1 Setup</a></li>
-        <ul>
-        <li><a href="#211-Commitments">2.1.1 Commitments</a></li>
-        </ul>
-    </li>
-    <li><a href="#22-Client-Side-Setting-the-match-key">2.2 Client Side: Setting the match key</a></li>
-    <li><a href="#23-Client-Side-Getting-the-encrypted-match-key-report">2.3 Client Side: Getting the encrypted match key report</a></li>
-    <li><a href="#24-Constraints-on-encrypted-match-keys">2.4 Constraints on encrypted match keys</a></li>
-    <li><a href="#25-Clarifying-allowed-uses">2.5 Clarifying allowed uses</a></li>
-    <li><a href="#26-Additional-Data">2.6 Additional Data</a>
-        <ul>
-        <li><a href="#261-Additional-data-associated-with-source-reports">2.6.1 Additional data associated with source reports</a></li>
-        <li><a href="#262-Additional-data-associated-with-trigger-reports">2.6.2 Additional data associated with trigger reports</a></li>
-        </ul>
-    </li>
-    <li><a href="#27-Generating-source-and-trigger-reports-by-the-report-collector">2.7 Generating source and trigger reports by the report collector</a></li>
-    <li><a href="#28-Secure-Multi-Party-Computation-between-a-helper-party-network-P1-P2-P3">2.8 Secure Multi Party Computation between a helper party network (P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>)</a></li>
-        <ul>
-        <li><a href="#281-Validating-reports">2.8.1 Validating reports</a></li>
-        <li><a href="#282-Oblivious-source-and-trigger-reports">2.8.2 Oblivious source and trigger reports</a></li>
-        <li><a href="#283-Oblivious-Sorting">2.8.3 Oblivious Sorting</a></li>
-        <li><a href="#284-Oblivious-Last-Touch-Attribution">2.8.4 Oblivious Last Touch Attribution</a></li>
-            <ul>
-            <li><a href="#2841-Interaction-Pattern">2.8.4.1 Interaction Pattern</a></li>
-            <li><a href="#2842-Last-Touch-Attribution">2.8.4.2 Last Touch Attribution</a></li>
-            </ul>
-        </li>
-        <li><a href="#285-User-Level-Sensitivity-Capping">2.8.5 User Level Sensitivity Capping</a></li>
-        <li><a href="#286-Computing-the-Aggregates">2.8.6 Computing the Aggregates</a></li>
-            <ul>
-            <li><a href="#2861-DP-Noise-Addition">2.8.6.1 DP Noise Addition</a></li>
-            </ul>
-        </li>
-        </ul>
-    </li>
-    </ul>
-<li><a href="#3-Technical-Discussion-and-Remarks">3. Technical Discussion and Remarks</a>
-    <ul>
-    <li><a href="#31-Optimizations">3.1 Optimizations</a></li>
-        <ul>
-        <li><a href="#311-Two-Party-Secret-Sharing">3.1.1 Two Party Secret Sharing</a></li>
-        <li><a href="#312-Match-Key-Compression">3.1.2 Match Key Compression</a></li>
-        <li><a href="#313-Presorting-by-Timestamp-and-Attribution-Constraint-ID">3.1.3 Presorting by Timestamp and Attribution Constraint ID</a></li>
-        <li><a href="#314-Computing-the-Aggregation-for-Large-Amount-of-Breakdowns">3.1.4 Computing the Aggregation for Large Amount of Breakdowns</a></li>
-        </ul>
-    </li>
-    <li><a href="#32-Other-Approaches-to-DP-or-MPC">3.2 Other Approaches to DP or MPC</a>
-        <ul>
-        <li><a href="#321-Privacy-Preserving-Mean-and-Covariance-Estimation">3.2.1 Privacy Preserving Mean and Covariance Estimation</a></li>
-        </ul>
-    </li>
-    <li><a href="#33-Transparency-of-Queries">3.3 Transparency of Queries</a></li>
-    <li><a href="#34-Oblivious-Algorithms">3.4 Oblivious Algorithms</a></li>
-    </ul>
-</li>
-<li><a href="#4-Thanks-and-Acknowledgements">4. Thanks and Acknowledgements</a></li>
-</ul>
+* [IPA End to End Protocol](#ipa-end-to-end-protocol)
+* [Overview](#overview)
+  * [Table of Contents](#table-of-contents)
+  * [Definitions](#definitions)
+    * [Parties Involved](#parties-involved)
+    * [Other Key Terms](#other-key-terms)
+  * [Attribution Measurement](#attribution-measurement)
+    * [Types of Queries](#types-of-queries)
+  * [Overview of MPC Security Model](#overview-of-mpc-security-model)
+  * [Differential Privacy](#differential-privacy)
+    * [Differentially Private Aggregate Queries](#differentially-private-aggregate-queries)
+    * [Differential Privacy Budget Management](#differential-privacy-budget-management)
+* [Protocol](#protocol)
+  * [Setup](#setup)
+    * [Commitments](#commitments)
+  * [Client Side: Setting the _match key_](#client-side-setting-the-match-key)
+  * [Client Side: Getting the encrypted _match key_ report](#client-side-getting-the-encrypted-match-key-report)
+  * [Constraints on encrypted _match keys_](#constraints-on-encrypted-match-keys)
+  * [Clarifying allowed uses](#clarifying-allowed-uses)
+  * [Additional Data](#additional-data)
+    * [Additional data associated with _source reports_](#additional-data-associated-with-source-reports)
+    * [Additional data associated with _trigger reports_](#additional-data-associated-with-trigger-reports)
+  * [Generating _source_ and _trigger reports_ by the _report collector_](#generating-source-and-trigger-reports-by-the-report-collector)
+  * [Secure Multi Party Computation between a _helper party network_ (P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>)](#secure-multi-party-computation-between-a-helper-party-network-p1-p2-p3)
+    * [Validating reports](#validating-reports)
+    * [Oblivious _source_ and _trigger reports_](#oblivious-source-and-trigger-reports)
+    * [Oblivious Sorting](#oblivious-sorting)
+    * [Oblivious Last Touch Attribution](#oblivious-last-touch-attribution)
+    * [User Level Sensitivity Capping](#user-level-sensitivity-capping)
+    * [Computing the Aggregates](#computing-the-aggregates)
+* [Technical Discussion and Remarks](#technical-discussion-and-remarks)
+  * [Optimizations](#optimizations)
+    * [Two Party Secret Sharing](#two-party-secret-sharing)
+    * [_Match Key_ Compression](#match-key-compression)
+    * [Presorting by Timestamp and Attribution Constraint ID](#presorting-by-timestamp-and-attribution-constraint-id)
+    * [Computing the Aggregation for Large Amount of Breakdowns](#computing-the-aggregation-for-large-amount-of-breakdowns)
+  * [Other Approaches to DP or MPC](#other-approaches-to-dp-or-mpc)
+    * [Privacy Preserving Mean and Covariance Estimation](#privacy-preserving-mean-and-covariance-estimation)
+  * [Transparency of Queries](#transparency-of-queries)
+  * [Oblivious Algorithms](#oblivious-algorithms)
+* [Thanks and Acknowledgements](#thanks-and-acknowledgements)
 
-## 1.1 Definitions
+## Definitions
 
 
-### 1.1.1 Parties Involved
+### Parties Involved
 
 There are a number of different parties that are involved with the protocol in one way or another:
 
@@ -119,7 +73,7 @@ There are a number of different parties that are involved with the protocol in o
     1. _**Delegate report collectors**_: Service providers to whom _websites/apps_ delegate their query issuing. In the case where a service provider acts as a _delegate_ for two distinct _websites/apps_, we consider these two separate _report collectors_ for the purpose of this document.
 
 
-### 1.1.2 Other Key Terms
+### Other Key Terms
 
 1. _**Fanout queries**_: The sets of queries that can be run by a _report collector_. A _fanout query_ must either be a _source fanout query_ or a _trigger fanout query_.
     1. _**Source fanout query**_: A query issued by a _report collector_ composed of _source reports_ from a single _source website/app_, which is the _website/app_ tied to that _report collector_. A _source fanout query_ may contain _trigger reports_ from many _trigger websites/apps_.
@@ -130,7 +84,7 @@ There are a number of different parties that are involved with the protocol in o
 5. _**Attribution Constraint ID**_: An identifier, specified by the _report collector_, to denote if a given pair of _source_ and _trigger events_ can be attributed (beyond having the same _match key_.)
 
 
-## 1.2 Attribution Measurement
+## Attribution Measurement
 
 Attribution measurement is a basic measurement approach used in online digital advertising. For a given conversion event (e.g. a purchase), we aim to attribute that conversion to an ad impression (if one exists.) We generalize into _source events_ (i.e. an ad impression) and _trigger events_ (i.e. a purchase.) _Source events_ happen on a _source website/app_, and _trigger events_ happen on a _trigger website/app_. In order to attribute, a _source event_ must occur before the _trigger event_ and must be from the same individual. In the event that a single query contains _trigger events_ from multiple _trigger websites/apps_, we must also constrain the attribution to only attribute _trigger events_ to _source events_ from relevant campaigns.
 
@@ -156,14 +110,14 @@ FROM (
 GROUP BY breakdown_key;
 ```
 
-### 1.2.1 Types of Queries
+### Types of Queries
 
 There are two types of queries which can be issued by a _report collector:_ a _source fanout query_ and _a trigger fanout query_. Both types take the same form as shown above in the SQL query, however a _source fanout query_ is composed of _source reports_ from a single _source website/app_, and _trigger reports_ from multiple _trigger websites/apps_. As such, the `attribution_constraint_id` is critical to _source fanout queries_, to ensure _trigger events_ are not spuriously attributed to _source events_ from unrelated campaigns.
 
 Conversely, a _trigger fanout query_ is composed of _trigger reports_ from a single _trigger website/app_, and _source reports_ from multiple _source websites/apps_. When a _report collector_, acting on behalf of a specific _source_/_trigger websites/app_, issues a query, the query must either be a _source fanout query_ with _source reports_ from that _website/app_, or a _trigger fanout query_ with _trigger reports_ from that _website/app_.
 
 
-## 1.3 Overview of MPC Security Model
+## Overview of MPC Security Model
 
 For the MPC run by a _helper party network_ we are proposing a 3-party, malicious, honest majority MPC such that even if one of the _helper parties_ actively tries to attack the protocol and runs malicious code to do so, they will be unable to learn any of the sensitive inputs and any actively malicious behavior will be detectable. We believe this will satisfy a threat model where we are trying to prevent any _helper party_ from leaking data in the event that they are curious, corrupted or compelled to do so.
 
@@ -172,33 +126,33 @@ With this being an honest majority MPC that does mean that if two of the three _
 This three party, honest majority setting allows for very efficient MPC protocols that can achieve malicious security at only a reasonable cost over semi-honest security.
 
 
-## 1.4 Differential Privacy
+## Differential Privacy
 
 In our current proposal, we have restricted ourselves to basic techniques to ensure differential privacy (DP). Our current approach favors simplicity, but we plan to continue researching ways to get better utility with the same privacy guarantee. Fundamentally, any approach to ensure DP is (in principle) compatible with MPC, but not every approach might be sufficiently efficient in an MPC.
 
 We are using DP to ensure that for a specific period of time, an _epoch_ (e.g. a week,) the amount of information revealed about an individual person is bounded. Below, we describe how to achieve DP for an individual query, and then how to manage a privacy budget across queries over the course of an _epoch_.
 
 
-### 1.4.1 Differentially Private Aggregate Queries
+### Differentially Private Aggregate Queries
 
 Differential privacy is parameterized by ε, which measures an individual's ability to influence the aggregate result. In order to provide differential privacy on a specific query, each users’ contributions must be bounded and the aggregate results must have differentially private random noise added that is inversely proportional to ε.
 
 The process of making a query differentially private impacts the accuracy of queries in two ways: 1) by adding noise to the aggregates and 2) by bounding individual user contributions to the aggregates. The impact of the former will be determined by the known noise distribution and the ε. For the latter, however, the amount of lost contribution due to capping is unknown to both the _helper parties_ and the _report collector_. For example, a _report collector_ would know that the maximum contribution for an individual was $100, but would be unaware how many users (if any) exceeded that cap.
 
 
-#### 1.4.1.1 Sensitivity Capping
+#### Sensitivity Capping
 
 In order to provide differential privacy at the level of individual user contributions (identified by _match keys_), each _match key_ must be limited in the total contribution it can make to the aggregate. This maximum contribution is the _sensitivity_ of the attribution function, and together with the ε, determines the amount of noise required to achieve differential privacy.
 
 
-#### 1.4.1.2 Differentially Private Noise
+#### Differentially Private Noise
 
 The output of each query is a sum per _breakdown key_. Since we have bound the sensitivity of a user’s contribution across all _breakdown keys_, this bound will also hold for their contribution to a particular breakdown sum. We will then generate DP random noise in the MPC (the exact distribution is still an open question) using ε and the _sensitivity_ to inform the variance of the noise distribution. This noise will be added to the breakdown sum to provide global DP. Since a user can contribute to several breakdown sums, we will need to use a distribution compatible with the DP composition theorem (exact distribution TBD).
 
 Note that because individual contributions are capped, our protocol also provides _robustness_ against malicious inputs over that cap.
 
 
-### 1.4.2 Differential Privacy Budget Management
+### Differential Privacy Budget Management
 
 The previous section focuses on applying differential privacy to individual queries. However, we need to further design a system such that over an _epoch_, the amount of information released about people is bounded. Specifically, we propose that for a given _epoch_ and _report collector_, individuals (represented by _match keys_) can have a bounded impact on the results, as measured by ε differential privacy.
 
@@ -209,10 +163,10 @@ Each query will include both the budget, ε<sub>i</sub>, and the sensitivity cap
 The _helper party network_ will need to maintain this budget, per _report collector_, over the course of an _epoch_, preventing _report collectors_ from issuing additional queries once that budget is exhausted. At the beginning of the next _epoch_, every _report collector’s_ budget will refresh to ε. Note that in infinite time, the information revealed also goes to infinity; our aim here is to control how quickly that divergence happens.
 
 
-# 2. Protocol
+# Protocol
 
 
-## 2.1 Setup
+## Setup
 
 Part of the protocol involves a _helper party network_ with three parties who the _user-agent vendor_ trusts to be non-colluding. We assume that the _user agent_ will be configured with the vendor approved _helper party networks_.
 
@@ -225,21 +179,21 @@ For each _helper party network_, some amount of setup needs to exist:
 * The public keys, i.e. `pk1`, `pk2` and `pk3`, are retrieved by the _user agents_. Each of the private keys is stored by exactly one of the _helper parties_.
 
 
-### 2.1.1 Commitments
+### Commitments
 
 Every _epoch, report collectors_ will need to make a commitment to use a specific _helper party network_ and _match key provider_. These commitments are important for enabling the differential privacy model we outline above; for a given _report collector_, a single _helper party network_ needs to manage its budget, and the commitment to a single _match key provider_ prevents duplicating user reports.
 
 The mechanism for making such a commitment, and making sure that it’s visible to all _helper party networks_ is still an open problem.
 
 
-## 2.2 Client Side: Setting the _match key_
+## Client Side: Setting the _match key_
 
 The first API proposed in IPA, `set_match_key()`, allows for the setting of a write-only `match_key` in the _user agent_ by _match key providers_. _Match key providers_ can be any _website/app_, but provide the most value when they are parties with large logged-in user bases, particularly across devices. As a user logs-in to a _match key provider_ service with different _user agents_ (across different browsers and apps, potentially on different devices) the _match key provider_ will set the same _match key_ for that user on each _user agent_.
 
 The _match key_ cannot be read directly; it is only used to produce secret shares encrypted towards a specific _helper party network_.
 
 
-## 2.3 Client Side: Getting the encrypted _match key_ report
+## Client Side: Getting the encrypted _match key_ report
 
 The second API proposed in IPA, `get_encrypted_match_key()`, allows _report collectors_ (acting on behalf of a specific _source_/_trigger website/app_) to request an encrypted _match key_.
 
@@ -258,7 +212,7 @@ To generate the encrypted _match key_, the _user agent_ will perform the followi
 5. These reports are provided back to the _report collector_ that called the API.
 
 
-## 2.4 Constraints on encrypted _match keys_
+## Constraints on encrypted _match keys_
 
 The key privacy property in generating the _encrypted match key_ is to prevent the _report collector_ from learning anything new about the user from the _user agent_. As a different secret sharing and encryption is used across the contexts of different _websites/apps_, _encrypted match keys_ cannot be used by the _report collector_ to enable cross-context tracking. Since an encrypted _match key_ is always returned upon request, the existence of a report reveals no new information to the _report collector_. Finally, since a random fallback value is used, a _report collector_ cannot learn even if the _match key_ was set.
 
@@ -273,7 +227,7 @@ Finally, to prevent a _report collector_ from circumventing their privacy budget
 3. That the current _source_ or _trigger fanout query_ only contains _source_ or _trigger reports_ (respectively) with a _match key_ generated on the _report collector’s_ associated _website/app_, which is recorded in the _current website/app_ field of the _data<sub>i</sub>_
 
 
-## 2.5 Clarifying allowed uses
+## Clarifying allowed uses
 
 It is possible for more than one _report collector_ to invoke the `get_encrypted_match_key()` API on the same _source_ or _trigger website/app_.
 
@@ -282,12 +236,12 @@ For example, `shoes.example` might buy ads on multiple _source websites/apps_. T
 Suppose that `search.example` is one of those _source websites/apps_ where `shoes.example` buys ads. In order to obtain an encrypted _match key_ which could be used for `search.example`’s _source fanout queries_, the `get_encrypted_match_key` function will need to be invoked on the `shoes.example` site, specifying `search.example` as the _report collector_. In this example, `search.example` would either need to have a script embedded on `shoes.example`, or would need to coordinate with `shoes.example` to generate the events, as laid out in the next section.
 
 
-## 2.6 Additional Data
+## Additional Data
 
 Let’s define the additional data a _report collector_ must generate for _source reports_ and _trigger reports_, beyond just the encrypted _match key_.
 
 
-### 2.6.1 Additional data associated with _source reports_
+### Additional data associated with _source reports_
 
 When a _source event_ occurs, a _report collector_ should also generate:
 
@@ -296,7 +250,7 @@ When a _source event_ occurs, a _report collector_ should also generate:
 3. `attribution_constraint_id` a value that a _source_ and _trigger report_ will also need to match to be attributed.
 
 
-### 2.6.2 Additional data associated with _trigger reports_
+### Additional data associated with _trigger reports_
 
 Similarly, when a _trigger event_ occurs, the _report collector_ should also generate:
 
@@ -305,7 +259,7 @@ Similarly, when a _trigger event_ occurs, the _report collector_ should also gen
 3. `attribution_constraint_id` a value that a _source_ and _trigger report_ will also need to match to be attributed.
 
 
-## 2.7 Generating _source_ and _trigger reports_ by the _report collector_
+## Generating _source_ and _trigger reports_ by the _report collector_
 
 When _source_ and _trigger events_ occur, the only information that must be prepared by the _user agent_ is the _encrypted match key_. All of the additional data listed above can be produced by the _report collector_ without the need for any newly designed APIs.
 
@@ -337,7 +291,7 @@ _Report collectors_ might choose to do this processing either client-side or ser
 From here, the _report collector_ is able to construct either a _source_ or _trigger fanout query_, which are limited to having _source reports_ or _trigger reports_, respectively, with _match keys_ only from the _website/app_ they are acting on behalf of. The _report collector_ issues that query by sending the collection of reports to the _helper party network_ which they are committed to.
 
 
-## 2.8 Secure Multi Party Computation between a _helper party network_ (P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>)
+## Secure Multi Party Computation between a _helper party network_ (P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>)
 
 To give a high level overview of what happens in the MPC:
 
@@ -358,7 +312,7 @@ To give a high level overview of what happens in the MPC:
 We now describe each step of the MPC in a bit more detail. Our MPC protocol relies heavily on the concept of _oblivious algorithms_, algorithms with access patterns that do not depend on their input. Oblivious algorithms allow for efficient MPC protocols, and we give more background in the section [Technical Discussion and Remarks](#3-technical-discussion-and-remarks). In the following, we discuss our current oblivious sorting and oblivious _last touch attribution_ approach.
 
 
-### 2.8.1 Validating reports
+### Validating reports
 
 When each _helper party_ decrypts their share of the _match key data_, it also includes the _report collector_ who invoked `get_encrypted_match_key` along with the _website/app_ where it was invoked and the _match key provider_. The _helper party_ must validate a few items:
 
@@ -371,7 +325,7 @@ When each _helper party_ decrypts their share of the _match key data_, it also i
     3. A _trigger fanout query_ where all _trigger reports_ have _match key data_ that was invoked on the _website/app_ that the _report collector_ is issuing the queries on behalf of.
 
 
-### 2.8.2 Oblivious _source_ and _trigger reports_
+### Oblivious _source_ and _trigger reports_
 
 In the MPC, _source_ and _trigger reports_ will need to be indistinguishable, so they will have the same format: _generic report_. This prevents information leakage by ensuring the _helper parties_ are unable to differentiate between _source_ and _trigger reports_ throughout the entire protocol. The _generic report shares_ (seen from the viewpoint of an individual _helper party_) uses the following struct:
 
@@ -390,7 +344,7 @@ _Source reports_ do not have any associated `trigger_value`, and _trigger report
 
 In the next step, the values will be obliviously sorted, which reorders the events and re-randomizes all of these secret shares in such a way that each row is indistinguishable from any other, and unlinkable to their original position. At this point, due to the structure of the `generic_report`, _source reports_ and _trigger reports_ are indistinguishable.
 
-### 2.8.3 Oblivious Sorting
+### Oblivious Sorting
 
 The first step of the MPC is to sort the reports by the _match key_, then timestamp. This sort must be oblivious, i.e. it cannot reveal (even to the _helper parties_) the sorted location of any report. As such, the sorting must also involve re-sharing the secret shares of all the data in the report (to prevent the _helper parties_ from linking the input rows to the output rows). For better readability, we give some examples in the clear, i.e. not secret shared. We emphasize that all the following lists would be secret shared among the _helper parties_ and no party would have access to the data in the clear. The sorted list has the following format:
 
@@ -565,7 +519,7 @@ The first step of the MPC is to sort the reports by the _match key_, then timest
 As mentioned above, the _helper bit_ indicates if the preceding row has the same `(match_key, attribution_constraint_id)` as the current element. We also may benefit from simply concatenating `match_key` and `attribution_constraint_id` together. We are exploring protocols to generate this helper bit during the sorting, and ultimately it’s an optimization to prevent a more expensive equality check between two rows in the attribution step (next.) We are actively researching which sorting algorithm will be best to use here, particularly in combination with creating the helper bit.
 
 
-### 2.8.4 Oblivious Last Touch Attribution
+### Oblivious Last Touch Attribution
 
 In this section, we describe our oblivious algorithm for _last touch attribution_. As mentioned earlier, we constrain ourselves within this document to _last touch attribution_ for the sake of simplicity. We aim to extend the IPA attribution functionality in the future to other attribution heuristics, such as equal credit.
 
@@ -574,7 +528,7 @@ Our oblivious attribution algorithm operates on the sorted list of secret-shared
 We must perform all iterations even if all nodes have already stopped accumulating data, because stopping early would reveal information (making it a non-oblivious algorithm.) Note that we could optimize this to a fixed, but less than `log(N)`, number of iterations, if we believe that _match keys_ will only have at most `2^i` reports in a given query.
 
 
-#### 2.8.4.1 Interaction Pattern
+#### Interaction Pattern
 
 In each iteration of the oblivious _last touch attribution_, each row is only compared with one other row in the list, which makes it highly parallelizable. The following image shows this interaction pattern over the course of 4 iterations.
 
@@ -585,7 +539,7 @@ This interaction pattern is oblivious because it does not depend on the values o
 
 ![A table showing the accumulation pattern for the first row. For the zeroth row, an arrow points to the first, second, forth, and eights row. For the second row, and arrow points to the third row. For the forth row, an arrow points to the fifth row and sixth row. For the sixth row, an arrow points to seventh row.](ipa-end-to-end-images/image1.png "image_tooltip")
 
-#### 2.8.4.2 _Last Touch Attribution_
+#### _Last Touch Attribution_
 
 We are adding two additional variables that will help us to accumulate the _last touch attribution_. One is a stop bit that will indicate whether the current row has stopped accumulating credit. It will be initialized to 1, and will stop accumulating credit once it is updated to 0. The other one is the credit variable that stores the accumulated credit. For _trigger reports_, we initialize the credit with its purchase value, and use -1 for the _breakdown key_ (since it’s unused). The list has the following format:
 
@@ -1847,12 +1801,12 @@ Credit + Credit[+4] * (Updated Stop Bit)
 Note that there is no change after the 4th iteration, but since the helpers can only see secret shares, they are not aware that this is unchanged. In fact, this is the point of an oblivious algorithm; if the algorithm were to stop after iteration 3, it would leak unintended information (outside of the intended purpose constrained output.)
 
 
-### 2.8.5 User Level Sensitivity Capping
+### User Level Sensitivity Capping
 
 We’ve now outlined an algorithm for oblivious attribution, but in order to ensure differential privacy, we need to limit the overall contribution that an individual user (as defined by a _match key_) can make to the entire query. More specifically, we ensure that for each _match key_ the sum of all attributed _trigger values_ does not exceed some bound. When a _match key_’s sum of attributed _trigger values_ does exceed this bound, we need to reduce them in some way. One approach is to reduce all contributions proportionally, e.g. if the cap is 100 but a _match key_ contributes 300, all contributions made by that _match key_ are reduced to a third of their value.
 
 
-### 2.8.6 Computing the Aggregates
+### Computing the Aggregates
 
 After the final iteration, we can then sum up the credit for each _breakdown key_ by iterating through the list. Note that we ignore the -1 value, which we used as a dummy value for the trigger events.
 
@@ -1894,53 +1848,53 @@ After the final iteration, we can then sum up the credit for each _breakdown key
   </tr>
 </table>
 
-#### 2.8.6.1 DP Noise Addition
+#### DP Noise Addition
 
 After computing the aggregates within each category, the _helper parties_ P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> generate additive noise to ensure DP on the user level. The amount of noise added depends on the sensitivity, i.e. on the cap of how much an individual _match key_ owner can contribute.
 
 The noise is generated within an MPC protocol. This could be done by having each party sample noise independently then add it to the secret shared aggregated value. This is a simple approach but has the drawback that the privacy guarantees in case of a corrupted MPC party are lower since the corrupted party will know their share of the noise and deduct it from the aggregated value. A better but more complicated approach is to run a secure coin tossing protocol between parties P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> where the coins are private and then use these coins to run a noise sampling algorithm within MPC to generate secret shares of the DP noise. This noise is then added to the secret shared aggregated value. Using the second approach, a malicious party cannot manipulate the protocol to see a noisy aggregated value with less noise. Hence, the privacy guarantees match the amount of DP noise generated and added as specified in the protocol description even when one party is malicious.
 
 
-# 3. Technical Discussion and Remarks
+# Technical Discussion and Remarks
 
 
-## 3.1 Optimizations
+## Optimizations
 
 
-### 3.1.1 Two Party Secret Sharing
+### Two Party Secret Sharing
 
 For efficiency, it might be possible to have the user-agent and _report collector_ server only generate two shares, saving a third of the external bandwidth (between user-agent to _report collector_ and _report collector_ to MPC _helper parties_) with a possible increase for the initial rounds of MPC interactions to convert into a 2:3 sharing.
 
 
-### 3.1.2 _Match Key_ Compression
+### _Match Key_ Compression
 
 Sorting _match keys_ gets more expensive as the size of the _match key_ grows (as measured by bit length.) There are different approaches that could be used to compress the _match key_ within MPC. This would lead to more efficient sorting, which comes at the cost of a slight increase in the probability of spurious collisions between users. The amount of compression would depend on the expected cardinality of unique _match keys_ within a query, and the tolerance of the _report collector_ for bias introduced by spurious collisions.
 
 
-### 3.1.3 Presorting by Timestamp and Attribution Constraint ID
+### Presorting by Timestamp and Attribution Constraint ID
 
 To improve the performance of the sorting step, we could presort the encrypted reports according to their timestamp. Later, the _helper parties_ could use a stable sort to sort according to the _match key_. This approach comes with the drawback that the timestamps need to be in the clear for either the _helper parties_ or the _report collector,_ which the _source website/app_ or _trigger website/app_ may not wish to share. This leakage seems minimal, however we need to explore this approach further and ensure that this leakage does not allow any significant attacks. Presorting by the attribution constraint ids can be handled similarly instead of concatenating them with the _match key_.
 
 
-### 3.1.4 Computing the Aggregation for Large Amount of Breakdowns
+### Computing the Aggregation for Large Amount of Breakdowns
 
 We can compute the aggregation for a large number of breakdowns more efficiently using sorting and prefix sum algorithms. We can use the same strategy as before by using sort and the tree-like structure to aggregate across _breakdown keys_. We omit the details here, but it may provide useful optimization in an implementation.
 
 
-## 3.2 Other Approaches to DP or MPC
+## Other Approaches to DP or MPC
 
 
-### 3.2.1 Privacy Preserving Mean and Covariance Estimation
+### Privacy Preserving Mean and Covariance Estimation
 
 Capping has the disadvantage that it introduces a level of inaccuracy that cannot be quantified by an advertiser or publisher. There is an approach to ensure DP provides more transparency to the inaccuracy introduced by releasing a differentially private estimate of the mean and covariance across individual user uncapped contributions to the breakdown sum. Publishing this mean and covariance would provide greater insight into the inaccuracy added from the DP sensitivity. We could follow the approach of [[BDKU2020]](https://arxiv.org/abs/2006.06618).
 
 
-## 3.3 Transparency of Queries
+## Transparency of Queries
 
 We have discussed IPA with various parties, and received several suggestions for additional extensions to the proposal. One such suggestion was the idea of _query transparency_. The idea is that the _helper party network_ could publicly publish various statistics about the IPA queries that each _report collector_ issued. This would allow for non-profits, and privacy watchdogs to audit the types of queries being run. For example, transparency about the number of queries run, the number of rows processed per query, the cardinality of _breakdown keys_ used and more could bring much more transparency to the digital advertising ecosystem.
 
 
-## 3.4 Oblivious Algorithms
+## Oblivious Algorithms
 
 Oblivious algorithms are algorithms with data access patterns that do not depend on the input. This is important to protect the secrecy of the private inputs. If the data access patterns _did_ depend on the input, a malicious _helper party_ might be able to learn some information by just observing which secret shares were accessed in what order.
 
@@ -1949,7 +1903,7 @@ An example of an oblivious algorithm is the bitonic sorting algorithm [[1]](http
 The last-touch attribution algorithm described above is oblivious. The algorithm can be parallelized into a large number of small computations that only compare two rows at a time. The pairs of rows which will be compared are always the same, regardless of the values of the input. As such, the _helper party_ learns nothing about the input, and can easily parallelize all of these comparisons.
 
 
-# 4. Thanks and Acknowledgements
+# Thanks and Acknowledgements
 
 We would like to thank Google for their [Attribution Reporting API with Aggregatable Reports](https://github.com/WICG/attribution-reporting-api/blob/main/AGGREGATE.md) proposal. This was of great inspiration to us, and led to lots of ideation about how a server-side aggregation service could be used to provide private, aggregate reports.
 
