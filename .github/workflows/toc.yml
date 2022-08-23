@@ -1,4 +1,4 @@
-name: "Perform Initial Repository Setup"
+name: "Update the Table of Contents"
 
 on: [push]
 
@@ -17,8 +17,10 @@ jobs:
       run: |
         t=$(mktemp)
         python3 toc.py "$FILE" > "$t"
-        mv "$t" "$FILE"
-        git -c user.name="ToC Bot" -c user.email="toc@example.com" commit -m "Update ToC" "$FILE"
+        if ! diff -q "$FILE" "$t" 2>/dev/null; then
+          mv "$t" "$FILE"
+          git -c user.name="ToC Bot" -c user.email="toc@example.com" commit -m "Update ToC" "$FILE"
+        fi
 
     - name: "Push Changes"
       if: ${{ github.ref_type == 'branch' }}
