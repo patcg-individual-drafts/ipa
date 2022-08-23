@@ -19,6 +19,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Parties Involved](#parties-involved)
     * [Other Key Terms](#other-key-terms)
   * [Attribution Measurement](#attribution-measurement)
+    * [Gathering Events](#gathering-events)
     * [Types of Queries](#types-of-queries)
   * [Overview of MPC Security Model](#overview-of-mpc-security-model)
   * [Differential Privacy](#differential-privacy)
@@ -110,11 +111,24 @@ FROM (
 GROUP BY breakdown_key;
 ```
 
+### Gathering Events
+
+IPA begins with different websites collecting information on important events.  Sites define what events are interesting to them.  Any information about that event can be collected along with the encrypted information produced by `get_encrypted_match_key()`.  At the time that an event is collected, IPA doesn't distinguish between _source events_ and _trigger events_.
+
+These events will occur on different _websites/apps_, so they then need to be gathered together by a _report collector_ and assembled into a _fanout query_.  This means that _websites/apps_ -- or entities acting on their behalf, such as an agency, ad network, SSP, or DSP -- will need to coordinate the collection of events.
+
+The bulk of the information that is collected for each event is chosen by the _website/app_ and is not passed to the _user agent_.  This information is not protected, so _websites/apps_ can choose what information they share about each event.
+
+
 ### Types of Queries
 
 There are two types of queries which can be issued by a _report collector:_ a _source fanout query_ and _a trigger fanout query_. Both types take the same form as shown above in the SQL query, however a _source fanout query_ is composed of _source reports_ from a single _source website/app_, and _trigger reports_ from multiple _trigger websites/apps_. As such, the `attribution_constraint_id` is critical to _source fanout queries_, to ensure _trigger events_ are not spuriously attributed to _source events_ from unrelated campaigns.
 
 Conversely, a _trigger fanout query_ is composed of _trigger reports_ from a single _trigger website/app_, and _source reports_ from multiple _source websites/apps_. When a _report collector_, acting on behalf of a specific _source_/_trigger websites/app_, issues a query, the query must either be a _source fanout query_ with _source reports_ from that _website/app_, or a _trigger fanout query_ with _trigger reports_ from that _website/app_.
+
+When making a _fanout query_, the _report collector_ uses the information it receives about events to decide whether to include an event in the query and what value is attached to the event.  The _report collector_ also assigns a _breakdown key_ to each _source event_ and a _trigger value_ to each _trigger value_.  The _report collector_ also assigns a value of its choice for the _attribution constraint ID_ of all events.
+
+Choosing which events are included and the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to [differential privacy constraints](#differential-privacy-budget-management) on those queries.
 
 
 ## Overview of MPC Security Model
