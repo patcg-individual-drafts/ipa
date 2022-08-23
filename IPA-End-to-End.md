@@ -6,7 +6,7 @@ Originally posted on 2022/07/28.
 
 # Overview
 
-Interoperable Private Attribution (IPA) is a proposal for a new web platform API for advertising attribution. It does so by proposing two new user-agent APIs: 1) a `set_match_key()` API, and 2) a `get_encrypted_match_key()` API. The _match keys_ which leave the _user agent_ are always encrypted towards a _privacy preserving measurement_ system, i.e. a distributed multi-party computation (MPC) operated by _helper parties_ who are only trusted to not collude. The _helper parties_ that operate this privacy preserving measurement system participate in a protocol to produce an aggregate and differentially private attribution result. Our goal is that a web platform which implements this API only needs to trust the _helper parties_ to not collude in order to have assurance that the API does not enable cross-context tracking. (The PATCG is working on a threat model, and our goal is that IPA will satisfy that model.)
+Interoperable Private Attribution (IPA) is a proposal for a new web platform API for advertising attribution. It does so by proposing two new user-agent APIs: 1) a `set_match_key()` API, and 2) a `get_encrypted_match_key()` API. The _match keys_ which leave the _user agent_ are always encrypted towards a _privacy preserving measurement_ system, i.e., a distributed multi-party computation (MPC) operated by _helper parties_ who are only trusted to not collude. The _helper parties_ that operate this privacy preserving measurement system participate in a protocol to produce an aggregate and differentially private attribution result. Our goal is that a web platform which implements this API only needs to trust the _helper parties_ to not collude in order to have assurance that the API does not enable cross-context tracking. (The PATCG is working on a threat model, and our goal is that IPA will satisfy that model.)
 
 This document provides an end-to-end overview of that protocol, focusing primarily on the MPC performed by the _helper parties_. For exploring an MPC based approach, we have made several design choices in favor of simplicity. This is especially true for our approach to DP as well as the focus on _last touch attribution_. We intend to improve the functionality of IPA by adding other approaches to DP and attribution as IPA progresses.
 
@@ -78,7 +78,7 @@ There are a number of different parties that are involved with the protocol in o
 1. _**Fanout queries**_: The sets of queries that can be run by a _report collector_. A _fanout query_ must either be a _source fanout query_ or a _trigger fanout query_.
     1. _**Source fanout query**_: A query issued by a _report collector_ composed of _source reports_ from a single _source website/app_, which is the _website/app_ tied to that _report collector_. A _source fanout query_ may contain _trigger reports_ from many _trigger websites/apps_.
     2. _**Trigger fanout query**_: A query issued by a _report collector_ composed of _trigger reports_ from a single _trigger website/app_, which is the _website/app_ tied to that _report collector_. A _trigger fanout query_ may contain _source reports_ from many _source websites/apps_.
-2. _**Epoch**_: a set period of time, e.g. a week.
+2. _**Epoch**_: a set period of time, e.g., a week.
 3. _**Match key**_: An identifier, set in the _user agent_, which identifies an individual person. This must never be released (beyond the _match key provider_) to any party in unencrypted form.
 4. _**Breakdown keys**_: A key, specified by the _report collector_, which allows for producing aggregates across many groups (or breakdowns.)
 5. _**Attribution Constraint ID**_: An identifier, specified by the _report collector_, to denote if a given pair of _source_ and _trigger events_ can be attributed (beyond having the same _match key_.)
@@ -86,9 +86,9 @@ There are a number of different parties that are involved with the protocol in o
 
 ## Attribution Measurement
 
-Attribution measurement is a basic measurement approach used in online digital advertising. For a given conversion event (e.g. a purchase), we aim to attribute that conversion to an ad impression (if one exists.) We generalize into _source events_ (i.e. an ad impression) and _trigger events_ (i.e. a purchase.) _Source events_ happen on a _source website/app_, and _trigger events_ happen on a _trigger website/app_. In order to attribute, a _source event_ must occur before the _trigger event_ and must be from the same individual. In the event that a single query contains _trigger events_ from multiple _trigger websites/apps_, we must also constrain the attribution to only attribute _trigger events_ to _source events_ from relevant campaigns.
+Attribution measurement is a basic measurement approach used in online digital advertising. For a given conversion event (e.g., a purchase), we aim to attribute that conversion to an ad impression (if one exists.) We generalize into _source events_ (i.e., an ad impression) and _trigger events_ (i.e., a purchase.) _Source events_ happen on a _source website/app_, and _trigger events_ happen on a _trigger website/app_. In order to attribute, a _source event_ must occur before the _trigger event_ and must be from the same individual. In the event that a single query contains _trigger events_ from multiple _trigger websites/apps_, we must also constrain the attribution to only attribute _trigger events_ to _source events_ from relevant campaigns.
 
-There are various approaches to addressing the situation when a _trigger event_ can be attributed to multiple _source events_; for simplicity, in this document we currently only address _last touch attribution_, i.e. _trigger events_ are attributed to the most recent _source event_ (although it is feasible to extend this approach to more complex attribution approaches).
+There are various approaches to addressing the situation when a _trigger event_ can be attributed to multiple _source events_; for simplicity, in this document we currently only address _last touch attribution_, i.e., _trigger events_ are attributed to the most recent _source event_ (although it is feasible to extend this approach to more complex attribution approaches).
 
 _Source and trigger events_ are represented by _source and trigger reports_ (more details in section [Generating source and trigger reports](#2-6-additional-data).) _Source reports_ include a _breakdown key_, which is used to identify the granularity of the attribution queries. Both _source_ and _trigger reports_ include an _attribution constraint ID_, for cases where _trigger events_ may not be eligible to attribute to all _source events_. The end result of attribution measurement is aggregates (counts and sums of values included with _trigger reports_), grouped by the _breakdown key_.
 
@@ -121,7 +121,7 @@ Conversely, a _trigger fanout query_ is composed of _trigger reports_ from a sin
 
 For the MPC run by a _helper party network_ we are proposing a 3-party, malicious, honest majority MPC such that even if one of the _helper parties_ actively tries to attack the protocol and runs malicious code to do so, they will be unable to learn any of the sensitive inputs and any actively malicious behavior will be detectable. We believe this will satisfy a threat model where we are trying to prevent any _helper party_ from leaking data in the event that they are curious, corrupted or compelled to do so.
 
-With this being an honest majority MPC that does mean that if two of the three _helper parties_ in a _helper party network_ collude with each other the sensitive inputs can be leaked without detection. To mitigate this risk we propose the _helper party networks_ be carefully chosen (e.g. to protect against multiple _helper parties_ being compelled, they should be located in different jurisdictions unlikely to work together).
+With this being an honest majority MPC that does mean that if two of the three _helper parties_ in a _helper party network_ collude with each other the sensitive inputs can be leaked without detection. To mitigate this risk we propose the _helper party networks_ be carefully chosen (e.g., to protect against multiple _helper parties_ being compelled, they should be located in different jurisdictions unlikely to work together).
 
 This three party, honest majority setting allows for very efficient MPC protocols that can achieve malicious security at only a reasonable cost over semi-honest security.
 
@@ -130,7 +130,7 @@ This three party, honest majority setting allows for very efficient MPC protocol
 
 In our current proposal, we have restricted ourselves to basic techniques to ensure differential privacy (DP). Our current approach favors simplicity, but we plan to continue researching ways to get better utility with the same privacy guarantee. Fundamentally, any approach to ensure DP is (in principle) compatible with MPC, but not every approach might be sufficiently efficient in an MPC.
 
-We are using DP to ensure that for a specific period of time, an _epoch_ (e.g. a week,) the amount of information revealed about an individual person is bounded. Below, we describe how to achieve DP for an individual query, and then how to manage a privacy budget across queries over the course of an _epoch_.
+We are using DP to ensure that for a specific period of time, an _epoch_ (e.g., a week,) the amount of information revealed about an individual person is bounded. Below, we describe how to achieve DP for an individual query, and then how to manage a privacy budget across queries over the course of an _epoch_.
 
 
 ### Differentially Private Aggregate Queries
@@ -158,7 +158,7 @@ The previous section focuses on applying differential privacy to individual quer
 
  In our current approach, we achieve this by providing each _report collector_ with a budget, ε. When _report collectors_ run queries they will specify how much budget to use, ε<sub>i</sub>, which will be deducted from their remaining budget. For example, given an _epoch_ limit of ε, a _report collector_ could perform 10 queries, each with global DP applied at ε/10, or a more complicated set of queries such as three with ε/5 and four with ε/10. (Note that smaller ε<sub>i</sub> result in _more_ noise and, thus, _more_ privacy.)
 
-Each query will include both the budget, ε<sub>i</sub>, and the sensitivity cap, which together determine the amount of noise required for that query. There is a tradeoff between noise level and sensitivity cap: larger noise allows less sensitivity capping, i.e. larger values after the capping. The exact tradeoff between noise level and cap would be chosen by the _report collector_ according to how they want to use their budget. Statistically, this is a tradeoff between bias (introduced by the capping) and accuracy (decreased by the differentially private noise.)
+Each query will include both the budget, ε<sub>i</sub>, and the sensitivity cap, which together determine the amount of noise required for that query. There is a tradeoff between noise level and sensitivity cap: larger noise allows less sensitivity capping, i.e., larger values after the capping. The exact tradeoff between noise level and cap would be chosen by the _report collector_ according to how they want to use their budget. Statistically, this is a tradeoff between bias (introduced by the capping) and accuracy (decreased by the differentially private noise.)
 
 The _helper party network_ will need to maintain this budget, per _report collector_, over the course of an _epoch_, preventing _report collectors_ from issuing additional queries once that budget is exhausted. At the beginning of the next _epoch_, every _report collector’s_ budget will refresh to ε. Note that in infinite time, the information revealed also goes to infinity; our aim here is to control how quickly that divergence happens.
 
@@ -174,9 +174,9 @@ For each _helper party network_, some amount of setup needs to exist:
 
 
 
-* The _helper parties_, P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> each generate one public key, secret key pair, i.e. `(pk_1, sk_1)`, `(pk_2, sk_2)` and `(pk_3, sk_3)`, of an IND-CCA secure public key encryption.
+* The _helper parties_, P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> each generate one public key, secret key pair, i.e., `(pk_1, sk_1)`, `(pk_2, sk_2)` and `(pk_3, sk_3)`, of an IND-CCA secure public key encryption.
     * We use `Encrypt(pk, data)` and `Decrypt(sk, data)` to denote its encryption and decryption under keys `(pk, sk)`.
-* The public keys, i.e. `pk1`, `pk2` and `pk3`, are retrieved by the _user agents_. Each of the private keys is stored by exactly one of the _helper parties_.
+* The public keys, i.e., `pk1`, `pk2` and `pk3`, are retrieved by the _user agents_. Each of the private keys is stored by exactly one of the _helper parties_.
 
 
 ### Commitments
@@ -283,8 +283,8 @@ struct {
 
 Aside from the encrypted _match key_ (which is already in the correct format), for each of the fields of these structs, the _report collector_ must do the following steps:
 
-1. Generate a 3-way secret sharing: e.g. `v = v_1 + v_2 + v_3`
-2. Encrypt each of the 3 shares towards one of the three _helper parties_: e.g. `Encrypt(pk_1, v_1), Encrypt(pk_2, v_2), Encrypt(pk_3, v_3)`
+1. Generate a 3-way secret sharing: e.g., `v = v_1 + v_2 + v_3`
+2. Encrypt each of the 3 shares towards one of the three _helper parties_: e.g., `Encrypt(pk_1, v_1), Encrypt(pk_2, v_2), Encrypt(pk_3, v_3)`
 
 _Report collectors_ might choose to do this processing either client-side or server-side; either is acceptable. There are advantages and disadvantages associated with each approach.
 
@@ -307,7 +307,7 @@ To give a high level overview of what happens in the MPC:
 6. The MPC enforces a sensitivity cap on the sum of _trigger values_ from a particular _match key_.
 7. The MPC adds the `trigger_value` of the attributed _trigger report_ to the sum corresponding to the `breakdown_key `of the _source report_ to which it was attributed.
 8. Using the sensitivity cap and the DP budget parameter, the MPC samples random noise and adds it to the sum corresponding to each _breakdown key_ to provide a global differential privacy guarantee.
-9. For each _epoch_ (e.g. one week), the MPC helpers track the total budget consumed by each _report collector_, to limit the total information leakage from the system for each _epoch_ and _report collector_.
+9. For each _epoch_ (e.g., one week), the MPC helpers track the total budget consumed by each _report collector_, to limit the total information leakage from the system for each _epoch_ and _report collector_.
 
 We now describe each step of the MPC in a bit more detail. Our MPC protocol relies heavily on the concept of _oblivious algorithms_, algorithms with access patterns that do not depend on their input. Oblivious algorithms allow for efficient MPC protocols, and we give more background in the section [Technical Discussion and Remarks](#3-technical-discussion-and-remarks). In the following, we discuss our current oblivious sorting and oblivious _last touch attribution_ approach.
 
@@ -346,7 +346,7 @@ In the next step, the values will be obliviously sorted, which reorders the even
 
 ### Oblivious Sorting
 
-The first step of the MPC is to sort the reports by the _match key_, then timestamp. This sort must be oblivious, i.e. it cannot reveal (even to the _helper parties_) the sorted location of any report. As such, the sorting must also involve re-sharing the secret shares of all the data in the report (to prevent the _helper parties_ from linking the input rows to the output rows). For better readability, we give some examples in the clear, i.e. not secret shared. We emphasize that all the following lists would be secret shared among the _helper parties_ and no party would have access to the data in the clear. The sorted list has the following format:
+The first step of the MPC is to sort the reports by the _match key_, then timestamp. This sort must be oblivious, i.e., it cannot reveal (even to the _helper parties_) the sorted location of any report. As such, the sorting must also involve re-sharing the secret shares of all the data in the report (to prevent the _helper parties_ from linking the input rows to the output rows). For better readability, we give some examples in the clear, i.e., not secret shared. We emphasize that all the following lists would be secret shared among the _helper parties_ and no party would have access to the data in the clear. The sorted list has the following format:
 
 <table>
   <tr>
@@ -772,7 +772,7 @@ We can further optimize this by not computing it fresh every step, but storing i
 
 Using this logic during each iteration for each row, we obtain the following intermediate results for our example list.
 
-In **iteration 0**, each row is compared to the next row (i.e. `index + 1 == index + 2^0`) to update the Stop Bit and Credit columns. Values that change from the previous round are highlighted in **bold**.
+In **iteration 0**, each row is compared to the next row (i.e., `index + 1 == index + 2^0`) to update the Stop Bit and Credit columns. Values that change from the previous round are highlighted in **bold**.
 
 
 <table>
@@ -1028,7 +1028,7 @@ Credit + Credit[+1] * (Updated Stop Bit)
   </tr>
 </table>
 
-In **iteration 1**, each row is compared to the row 2 below (i.e. `index + 2^1 == index + 2`)
+In **iteration 1**, each row is compared to the row 2 below (i.e., `index + 2^1 == index + 2`)
 
 <table>
   <tr>
@@ -1284,7 +1284,7 @@ Credit + Credit[+2] * (Updated Stop Bit)
 </table>
 
 
-In **iteration 2**, each row is compared to the row 4 below (i.e. `index + 2^2 == index + 4):
+In **iteration 2**, each row is compared to the row 4 below (i.e., `index + 2^2 == index + 4):
 
 
 <table>
@@ -1541,7 +1541,7 @@ Credit + Credit[+4] * (Updated Stop Bit)
 </table>
 
 
-In **iteration 3**, each row is compared to the row 8 below it (i.e. `index + 2^3 == index + 8`.) This is our final iteration, because the largest gap in our sample dataset is 8.
+In **iteration 3**, each row is compared to the row 8 below it (i.e., `index + 2^3 == index + 8`.) This is our final iteration, because the largest gap in our sample dataset is 8.
 
 
 <table>
@@ -1803,7 +1803,7 @@ Note that there is no change after the 4th iteration, but since the helpers can 
 
 ### User Level Sensitivity Capping
 
-We’ve now outlined an algorithm for oblivious attribution, but in order to ensure differential privacy, we need to limit the overall contribution that an individual user (as defined by a _match key_) can make to the entire query. More specifically, we ensure that for each _match key_ the sum of all attributed _trigger values_ does not exceed some bound. When a _match key_’s sum of attributed _trigger values_ does exceed this bound, we need to reduce them in some way. One approach is to reduce all contributions proportionally, e.g. if the cap is 100 but a _match key_ contributes 300, all contributions made by that _match key_ are reduced to a third of their value.
+We’ve now outlined an algorithm for oblivious attribution, but in order to ensure differential privacy, we need to limit the overall contribution that an individual user (as defined by a _match key_) can make to the entire query. More specifically, we ensure that for each _match key_ the sum of all attributed _trigger values_ does not exceed some bound. When a _match key_’s sum of attributed _trigger values_ does exceed this bound, we need to reduce them in some way. One approach is to reduce all contributions proportionally, e.g., if the cap is 100 but a _match key_ contributes 300, all contributions made by that _match key_ are reduced to a third of their value.
 
 
 ### Computing the Aggregates
@@ -1850,7 +1850,7 @@ After the final iteration, we can then sum up the credit for each _breakdown key
 
 #### DP Noise Addition
 
-After computing the aggregates within each category, the _helper parties_ P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> generate additive noise to ensure DP on the user level. The amount of noise added depends on the sensitivity, i.e. on the cap of how much an individual _match key_ owner can contribute.
+After computing the aggregates within each category, the _helper parties_ P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> generate additive noise to ensure DP on the user level. The amount of noise added depends on the sensitivity, i.e., on the cap of how much an individual _match key_ owner can contribute.
 
 The noise is generated within an MPC protocol. This could be done by having each party sample noise independently then add it to the secret shared aggregated value. This is a simple approach but has the drawback that the privacy guarantees in case of a corrupted MPC party are lower since the corrupted party will know their share of the noise and deduct it from the aggregated value. A better but more complicated approach is to run a secure coin tossing protocol between parties P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> where the coins are private and then use these coins to run a noise sampling algorithm within MPC to generate secret shares of the DP noise. This noise is then added to the secret shared aggregated value. Using the second approach, a malicious party cannot manipulate the protocol to see a noisy aggregated value with less noise. Hence, the privacy guarantees match the amount of DP noise generated and added as specified in the protocol description even when one party is malicious.
 
@@ -1911,4 +1911,4 @@ We would also like to thank Apple for their [Private Click Measurement](https://
 
 We would also like to thank our academic collaborators for their feedback on early versions of the IPA proposal. Their input has been invaluable in evolving this proposal to be both more private, and more useful.
 
-Finally, many thanks to all of the researchers who have published papers about protocols applicable to a _helper party network_ with the same target threat model (i.e. 3 non-colluding parties, where at most one party can act maliciously). Their work on protocols like [modulus conversion](https://eprint.iacr.org/2018/387.pdf), [sorting](https://eprint.iacr.org/2019/695.pdf), and [other algorithms](https://ieeexplore.ieee.org/document/7163037) is what has made this proposal possible. It’s an honor to be building on the shoulders of giants.
+Finally, many thanks to all of the researchers who have published papers about protocols applicable to a _helper party network_ with the same target threat model (i.e., 3 non-colluding parties, where at most one party can act maliciously). Their work on protocols like [modulus conversion](https://eprint.iacr.org/2018/387.pdf), [sorting](https://eprint.iacr.org/2019/695.pdf), and [other algorithms](https://ieeexplore.ieee.org/document/7163037) is what has made this proposal possible. It’s an honor to be building on the shoulders of giants.
