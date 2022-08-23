@@ -19,6 +19,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Parties Involved](#parties-involved)
     * [Other Key Terms](#other-key-terms)
   * [Attribution Measurement](#attribution-measurement)
+    * [Gathering Events](#gathering-events)
     * [Types of Queries](#types-of-queries)
   * [Overview of MPC Security Model](#overview-of-mpc-security-model)
   * [Differential Privacy](#differential-privacy)
