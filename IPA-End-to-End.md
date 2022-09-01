@@ -168,14 +168,15 @@ Note that because individual contributions are capped, our protocol also provide
 
 ### Differential Privacy Budget Management
 
-The previous section focuses on applying differential privacy to individual queries. However, we need to further design a system such that over an _epoch_, the amount of information released about people is bounded. Specifically, we propose that for a given _epoch_ and _report collector_, individuals (represented by _match keys_) can have a bounded impact on the results, as measured by ε differential privacy.
+The previous section focuses on applying differential privacy to individual queries. However, we need to further design a system such that over an _epoch_, the amount of information released about people is bounded. Specifically, we propose that for a given _epoch_ and _website/app_ (represented by a single _report collector_), individuals (represented by _match keys_) can have a bounded impact on the results, as measured by ε differential privacy.
 
- In our current approach, we achieve this by providing each _report collector_ with a budget, ε. When _report collectors_ run queries they will specify how much budget to use, ε<sub>i</sub>, which will be deducted from their remaining budget. For example, given an _epoch_ limit of ε, a _report collector_ could perform 10 queries, each with global DP applied at ε/10, or a more complicated set of queries such as three with ε/5 and four with ε/10. (Note that smaller ε<sub>i</sub> result in _more_ noise and, thus, _more_ privacy.)
+ In our current approach, we achieve this by providing each _report collector_ with a budget, ε for the given _website/app_ they are querying on behalf of. When _report collectors_ run queries they will specify how much budget to use, ε<sub>i</sub>, which will be deducted from their remaining budget. For example, given an _epoch_ limit of ε, a _report collector_ could perform 10 queries, each with global DP applied at ε/10, or a more complicated set of queries such as three with ε/5 and four with ε/10. (Note that smaller ε<sub>i</sub> result in _more_ noise and, thus, _more_ privacy.)
 
 Each query will include both the budget, ε<sub>i</sub>, and the sensitivity cap, which together determine the amount of noise required for that query. There is a tradeoff between noise level and sensitivity cap: larger noise allows less sensitivity capping, i.e., larger values after the capping. The exact tradeoff between noise level and cap would be chosen by the _report collector_ according to how they want to use their budget. Statistically, this is a tradeoff between bias (introduced by the capping) and accuracy (decreased by the differentially private noise.)
 
-The _helper party network_ will need to maintain this budget, per _report collector_, over the course of an _epoch_, preventing _report collectors_ from issuing additional queries once that budget is exhausted. At the beginning of the next _epoch_, every _report collector’s_ budget will refresh to ε. Note that in infinite time, the information revealed also goes to infinity; our aim here is to control how quickly that divergence happens.
+The _helper party network_ will need to maintain this budget, per _website/app_, over the course of an _epoch_, preventing _report collectors_ from issuing additional queries once that budget is exhausted. At the beginning of the next _epoch_, every _report collector’s_ budget will refresh to ε. Note that in infinite time, the information revealed also goes to infinity; our aim here is to control how quickly that divergence happens.
 
+The mechanism for enforcing that only a single _report collector_ can issue queries for a given _website/app_ is an open problem.
 
 # Protocol
 
