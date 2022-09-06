@@ -149,21 +149,25 @@ We are using DP to ensure that for a specific period of time, an _epoch_ (e.g., 
 
 ### Differentially Private Aggregate Queries
 
-Differential privacy is parameterized by ε, which measures an individual's ability to influence the aggregate result. In order to provide differential privacy on a specific query, each users’ contributions must be bounded and the aggregate results must have differentially private random noise added that is inversely proportional to ε.
+In order to provide differential privacy, aggregate results have differentially private random noise added. Differential privacy is parameterized by ε (epsilon), which (inversely) scales the noise added to an aggregate output. The noise that is added needs to be proportional to the _sensitivity_, or the amount that inputs from an individual can influence the aggregate.
 
-The process of making a query differentially private impacts the accuracy of queries in two ways: 1) by adding noise to the aggregates and 2) by bounding individual user contributions to the aggregates. The impact of the former will be determined by the known noise distribution and the ε. For the latter, however, the amount of lost contribution due to capping is unknown to both the _helper parties_ and the _report collector_. For example, a _report collector_ would know that the maximum contribution for an individual was $100, but would be unaware how many users (if any) exceeded that cap.
+Adding more noise to an aggregate result can make the value less useful. A small ε means more noise and better privacy; a large ε means less noise and better utility. To ensure that noise is finite, the amount that each individual could contribute to the aggregate needs to be bounded. This bounding is done by sensitivity capping.
 
 
 #### Sensitivity Capping
 
-In order to provide differential privacy at the level of individual user contributions (identified by _match keys_), each _match key_ must be limited in the total contribution it can make to the aggregate. This maximum contribution is the _sensitivity_ of the attribution function, and together with the ε, determines the amount of noise required to achieve differential privacy.
+In order to provide differential privacy at the level of individual user contributions (as identified by _match keys_), each _match key_ must be limited in the total contribution it can make to the aggregate. This maximum contribution is the _sensitivity_ of the attribution function, and together with the ε, determines the amount of noise required to achieve differential privacy.
+
+The sensitivity cap that is set for a query will be determined as a parameter to the query.  Any contribution that exceeds this cap for a single individual will be lost.  The exact value of what is lost due to this capping will be unknown to all entities involved - the _helper parties_ and the _report collector_. For example, a _report collector_ might set a maximum contribution of $100, but would be unaware how many users (if any) exceeded that cap and by how much the cap was exceeded.
+
+Note that because individual contributions are capped, our protocol also provides _robustness_ against malicious inputs over that cap. In addition to provide privacy assurances, the sensitivity cap also limits the amount by which a malicious input can alter a result.
 
 
 #### Differentially Private Noise
 
-The output of each query is a sum per _breakdown key_. Since we have bound the sensitivity of a user’s contribution across all _breakdown keys_, this bound will also hold for their contribution to a particular breakdown sum. We will then generate DP random noise in the MPC (the exact distribution is still an open question) using ε and the _sensitivity_ to inform the variance of the noise distribution. This noise will be added to the breakdown sum to provide global DP. Since a user can contribute to several breakdown sums, we will need to use a distribution compatible with the DP composition theorem (exact distribution TBD).
+The output of each query is a sum per _breakdown key_. The contribution from a single user is limited across all breakdown keys, but this contribution can be allocated all to a single _breakdown key_ or distributed across multiple _breakdown keys_.  Consequently, the sensitivity of the value of each breakdown is determined by the global sensitivity cap.
 
-Note that because individual contributions are capped, our protocol also provides _robustness_ against malicious inputs over that cap.
+Random noise is added to each breakdown, using ε and the _sensitivity_ to inform the variance of the noise distribution. Noise will be added to each breakdown sum to provide global DP. The exact noise distribution (Laplace, Gauss, ...) and method of application (in-MPC, by helpers, ...) has not yet been determined. This needs to consider the effect of the DP composition theorem, especially for multiple queries.
 
 
 ### Differential Privacy Budget Management
