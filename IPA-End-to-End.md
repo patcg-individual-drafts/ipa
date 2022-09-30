@@ -91,7 +91,7 @@ Attribution measurement is a basic measurement approach used in online digital a
 
 There are various approaches to addressing the situation when a _trigger event_ can be attributed to multiple _source events_; for simplicity, in this document we currently only address _last touch attribution_, i.e., _trigger events_ are attributed to the most recent _source event_ (although it is feasible to extend this approach to more complex attribution approaches).
 
-_Source and trigger events_ are represented by _source and trigger reports_ (more details in section [Generating source and trigger reports](#2-6-additional-data).) _Source reports_ include a _breakdown key_, which is used to identify the granularity of the attribution queries. Both _source_ and _trigger reports_ include an _attribution constraint ID_, for cases where _trigger events_ may not be eligible to attribute to all _source events_. The end result of attribution measurement is aggregates (counts and sums of values included with _trigger reports_), grouped by the _breakdown key_.
+_Source and trigger events_ are represented by _source and trigger reports_ (more details in section [Generating source and trigger reports](#additional-data).) _Source reports_ include a _breakdown key_, which is used to identify the granularity of the attribution queries. Both _source_ and _trigger reports_ include an _attribution constraint ID_, for cases where _trigger events_ may not be eligible to attribute to all _source events_. The end result of attribution measurement is aggregates (counts and sums of values included with _trigger reports_), grouped by the _breakdown key_.
 
 As a SQL query, we can approximate _last touch attribution_ as:
 
@@ -318,10 +318,10 @@ To give a high level overview of what happens in the MPC:
 
 1. First the _helper parties_ receive and decrypt their shares for _source_ or _trigger reports_.
     1. _Helper party<sub>j</sub>_ receives either a `source_report` or a `trigger_report`, and decrypts their shares of the attributes using `sk_j`.
-    2. _Helper party<sub>j</sub>_ validates the report and builds a `generic_report` from their decrypted shares. [Section 2.8.1 Validating reports](#281-validating-reports) expands on the details.
+    2. _Helper party<sub>j</sub>_ validates the report and builds a `generic_report` from their decrypted shares. [Section 2.8.1 Validating reports](#validating-reports) expands on the details.
 2. The _helper parties_ supply these shares as private inputs into the MPC.
 3. The _helper parties_ sort the _generic reports_ by `match_key`, `attribution_constraint_id`, then `timestamp`.
-    1. We explore a handful of possible optimizations for this in section [Technical Discussion and Remarks](#3-technical-discussion-and-remarks).
+    1. We explore a handful of possible optimizations for this in section [Technical Discussion and Remarks](#technical-discussion-and-remarks).
 4. The MPC also sets a secret shared helper bit to indicate if a row has the same `(match_key, attribution_constraint_id)` as the one before it.
     1. This could happen in a customized sorting protocol designed to also create these bits, or after the sort as a standalone step.
 5. The MPC computes an _oblivious attribution_, a protocol we describe below that uses a tree-like pattern to obliviously attribute _trigger values_ to the nearest preceding _source report_ with the same _match key_.
@@ -330,7 +330,7 @@ To give a high level overview of what happens in the MPC:
 8. Using the sensitivity cap and the DP budget parameter, the MPC samples random noise and adds it to the sum corresponding to each _breakdown key_ to provide a global differential privacy guarantee.
 9. For each _epoch_ (e.g., one week), the MPC helpers track the total budget consumed by each _report collector_, to limit the total information leakage from the system for each _epoch_ and _report collector_.
 
-We now describe each step of the MPC in a bit more detail. Our MPC protocol relies heavily on the concept of _oblivious algorithms_, algorithms with access patterns that do not depend on their input. Oblivious algorithms allow for efficient MPC protocols, and we give more background in the section [Technical Discussion and Remarks](#3-technical-discussion-and-remarks). In the following, we discuss our current oblivious sorting and oblivious _last touch attribution_ approach.
+We now describe each step of the MPC in a bit more detail. Our MPC protocol relies heavily on the concept of _oblivious algorithms_, algorithms with access patterns that do not depend on their input. Oblivious algorithms allow for efficient MPC protocols, and we give more background in the section [Technical Discussion and Remarks](#technical-discussion-and-remarks). In the following, we discuss our current oblivious sorting and oblivious _last touch attribution_ approach.
 
 
 ### Validating reports
