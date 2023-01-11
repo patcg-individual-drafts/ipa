@@ -282,13 +282,18 @@ At the highest level, submitting data for a query can follow two basic patterns:
    destined for helper parties needs to be encrypted so that the receiving
    entity is unable to see it.
 
-We adopt the latter model.  Having a single point of contact allows for an
-asymmetric deployment of helper parties, where some helper parties only need to
-perform basic tasks.
+We originally intended to adopt the latter model.  Having a single point of
+contact allows for an asymmetric deployment of helper parties, where some helper
+parties only need to perform basic tasks.  However, there are practical
+considerations that push toward separate submissions.
 
 In a model where all records are submitted to the same endpoint, there are
 conceptually multiple flows of data, one to each helper party.  These flows
 could be delivered sequentially or interleaved.
+
+Note that any architectural decisions might be distinct from business
+arrangements.  A single point of contact might be desirable for things like
+simplifying billing interactions.  This could be provided with either model.
 
 
 ### Interleaving
