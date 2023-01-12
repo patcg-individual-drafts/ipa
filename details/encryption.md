@@ -16,9 +16,6 @@ required in some cases, such as between helpers.
 Formally, this HTTPS only applies to those places where specifying
 interoperability requirements are specified, which is:
 
-* Between the user agent and sites.  This will be enforced by only exposing Web
-  APIs in [secure contexts](https://w3c.github.io/webappsec-secure-contexts/).
-
 * Between a record collector and the helper party network.
 
 * Between helpers in a helper party network.
@@ -146,9 +143,13 @@ composed from:
 
 3. A single zero-valued byte.
 
-4. The single-byte key identifier from the key configuration for the helper party.
+4. The ASCII serialization of the current site origin.
 
-5. The current epoch, encoded as an two-byte integer in network byte order.
+5. A single zero-valued byte.
+
+6. The single-byte key identifier from the key configuration for the helper party.
+
+7. The current epoch, encoded as an two-byte integer in network byte order.
 
 TODO: OHTTP included identifiers for the KEM, KDF, and AEAD in this.  HPKE
 already includes these identifiers in its `suite_id` concept, making that
@@ -157,9 +158,11 @@ somewhat redundant.  Decide whether to add those values here too.
 This produces the following process in pseudocode:
 
 ```python
-def ipa_info(helper_origin, key_id, epoch):
+def ipa_info(helper_origin, site_origin, key_id, epoch):
     return concat(encode_str("private-attribution"),
               ascii_origin(helper_origin),
+              encode(0, 1),
+              ascii_origin(site_origin),
               encode(0, 1),
               encode(key_id, 1),
               encode(epoch, 2))
@@ -177,7 +180,7 @@ key to produce the message for that helper.
 This process is applied for each helper, as follows:
 
 ```python
-info = ipa_info(helper_origin, key_id, epoch)
+info = ipa_info(helper_origin, site_origin, key_id, epoch)
 enc, sctxt = SetupBaseS(pkH, info)
 ct = sctxt.Seal("", concat(mk[i], mk[i+1]))
 enc_mk = concat(enc, ct)
@@ -199,6 +202,7 @@ it can be later retrieved.  Alternatively, a user agent could use a pseudorandom
 function (PRF) for this purpose, seeding it with the site origin and epoch,
 provided that the secret that is used is properly protected.
 
+
 ### Decryption
 
 Helper parties can reverse this process by retrieving the private key that
@@ -207,7 +211,7 @@ the secret key, the encapsulation key, and the same `info` string.
 
 ```python
 enc, ct = parse(enc_mk)
-info = ipa_info(helper_origin, key_id, epoch)
+info = ipa_info(helper_origin, site_origin, key_id, epoch)
 rctxt = SetupBaseR(enc, skR, info)
 request, error = rctxt.Open("", ct)
 ```
@@ -218,10 +222,11 @@ request, error = rctxt.Open("", ct)
 With a typical HPKE configuration of "`DHKEM(X25519, HKDF-SHA256)`",
 "`HKDF-SHA256`", and any AEAD with a 16-byte tag (such as "`AES-128-GCM`" or
 "`ChaCha20Poly1305`"), this process produces 48 bytes of overhead per helper,
-per encryption.  This does not include the key identifier or epoch (3 bytes),
-which are repeated across multiple items, allowing their cost to be amortized.
-Other information, like the helper party origin, is expected to be implicit, so
-it should not require transmission.
+per encryption.  This does not include the site origin (variable), key
+identifier (1 byte) or epoch (2 bytes), which are repeated across multiple
+items, which should mean that their cost can be amortized.  Other information,
+like the helper party origin, is expected to be implicit, so it should not
+require transmission.
 
 For a 64-bit match key, this means that it is possible to represent each
 encrypted match key in just 240 bytes provided that values that are shared
