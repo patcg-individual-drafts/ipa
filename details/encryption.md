@@ -30,8 +30,8 @@ documents might specify expectations about how data is handled.
 
 Though TLS is a key component, IPA relies on an IND-CCA secure public key
 encryption scheme to protect match keys.  When a site requests an encrypted
-match key, the browser generates three objects that are encrypted toward each of
-the three helpers ($P_1$, $P_2$, and $P_3$).
+match key, the user agent generates three objects that are encrypted toward each
+of the three helpers ($P_1$, $P_2$, and $P_3$).
 
 HPKE ([RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180)) is used to
 protect match keys.  HPKE provides an IND-CCA2 secure scheme that combines
@@ -71,26 +71,41 @@ process are:
 * The current time, specifically the current epoch.
 
 
-### Retrieving Key Configuration
+### Obtaining Key Configurations
 
 The user agent then determines which helper party network will receive the
-information.  Superficially, this requires that the user agent query an HTTPS
-resource at the site origin to retrieve the identity of the helper party
-network, but as the protocol requires that sites
-[commit](https://github.com/patcg-individual-drafts/ipa/blob/main/IPA-End-to-End.md#commitments)
-to a helper party network, this might involve a different process.  The specific
-details of this process are not yet determined.
-
-The user agent then obtains:
+information.  The site either tells the user agent which helper parties it has
+committed to for the current epoch, or it identifies a helper party network.
+The user agent should already know these parties, so it can obtain information
+about the helper party network:
 
 * The identity of the three helper parties in the site's chosen helper party
   network.
 
 * The key configuration for each helper party.
 
+As there a limited number of helper parties that the user agent trusts, it
+should be possible to keep copy of this information and refresh it periodically.
+Therefore, this should be a simple lookup for the user agent.
+
+Note that the site is required to [commit to a helper party
+network](https://github.com/patcg-individual-drafts/ipa/blob/main/IPA-End-to-End.md#commitments)
+for each epoch.  However, the user agent doesn't need to enforce that.  The helper
+party networks (all of them!) are trusted by user agents to check that they are authorized to
+receive events in a given epoch for the site.  At the start of each epoch, the
+helper parties can check in with each of their customers and take a copy of
+their current commitment.  Then, the helper parties can reject any attempt to
+provide them with an event if the commitment they saved for the corresponding
+epoch does not include them.
+
+
 ### Replicated Secret Sharing
 
-The user agent then creates three binary sharings ($mk_1$, $mk_2$, $mk_3$) of
+The user agent then retrieves a match key.  This process always succeeds, but it
+might result in a random value being selected.  The details of this process can
+be found in [TODO](about:blank).
+
+From this, it creates three binary sharings ($mk_1$, $mk_2$, $mk_3$) of
 the match key by generating two random values (see [RFC
 4086](https://datatracker.ietf.org/doc/html/rfc4086)), setting the first two
 shares to these values, then setting the third to the exclusive OR of the match
@@ -137,23 +152,21 @@ are constructed using an input that captures critical contextual information.
 The `info` input for HPKE shall include a distinguishing sequence that is
 composed from:
 
-1. The fixed string "private-attribution", encoded in ASCII,
+1. The fixed string "private-attribution", encoded in ASCII, terminated with a
+   single zero-valued byte.
 
-2. The ASCII serialization of the helper party origin.
+2. The [ASCII serialization of the helper party
+   origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
+   terminated with a single zero-valued byte.
 
-3. A single zero-valued byte.
+3. The [ASCII serialization of the current site
+   origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
+   terminated with a single zero-valued byte.
 
-4. The ASCII serialization of the current site origin.
+4. The single-byte key identifier from the key configuration for the helper
+   party.
 
-5. A single zero-valued byte.
-
-6. The single-byte key identifier from the key configuration for the helper party.
-
-7. The current epoch, encoded as an two-byte integer in network byte order.
-
-TODO: OHTTP included identifiers for the KEM, KDF, and AEAD in this.  HPKE
-already includes these identifiers in its `suite_id` concept, making that
-somewhat redundant.  Decide whether to add those values here too.
+5. The current epoch, encoded as an two-byte integer in network byte order.
 
 This produces the following process in pseudocode:
 
@@ -248,10 +261,11 @@ Each query requires that the record collector provide multiple items or records.
 Each record is split into three components, each that is sent to one of the
 three helper parties.  Each component includes one part of the encrypted match
 key (which does not necessarily require further encryption), information
-necessary for decryption (the key identifier used in match key encryption and
-the epoch), and supplementary information provided by the record collector:
-event type (source or trigger), the trigger value, the breakdown key, and
-attribution constraint ID.
+necessary for decryption (the origin of the site where this match key was
+requested, the key identifier used in match key encryption and the epoch), and
+supplementary information provided by the record collector: event type (source
+or trigger), the trigger value, the breakdown key, and attribution constraint
+ID.
 
 Of these fields, the current design only permits the decryption information to
 be directly exposed; all other values are secret shared.  Decryption information
