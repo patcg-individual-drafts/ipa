@@ -242,7 +242,7 @@ like the helper party origin, is expected to be implicit, so it should not
 require transmission.
 
 For a 64-bit match key, this means that it is possible to represent each
-encrypted match key in just 240 bytes provided that values that are shared
+encrypted match key in just 192 bytes provided that values that are shared
 across multiple values are applied to multiple items.
 
 This is larger than typical identifiers used in tracking cookies, which only
