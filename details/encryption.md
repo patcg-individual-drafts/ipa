@@ -31,7 +31,7 @@ documents might specify expectations about how data is handled.
 Though TLS is a key component, IPA relies on an IND-CCA secure public key
 encryption scheme to protect match keys.  When a site requests an encrypted
 match key, the user agent generates three objects that are encrypted toward each
-of the three helpers ($P_1$, $P_2$, and $P_3$).
+of the three helpers $\left\\{P_1, P_2, P_3\right\\}$.
 
 HPKE ([RFC 9180](https://datatracker.ietf.org/doc/html/rfc9180)) is used to
 protect match keys.  HPKE provides an IND-CCA2 secure scheme that combines
@@ -65,8 +65,11 @@ events are aggregated.
 A site can request the generation of an encrypted match key.  The inputs to this
 process are:
 
-* The origin ([RFC 6454](https://datatracker.ietf.org/doc/html/rfc6454)) of the
-  site making the request.
+* The [registrable domain](https://url.spec.whatwg.org/#host-registrable-domain)
+  of the site making the request.
+
+* The [origin](https://datatracker.ietf.org/doc/html/rfc6454) of the match key
+  provider.
 
 * The current time, specifically the current epoch.
 
@@ -155,27 +158,35 @@ composed from:
 1. The fixed string "private-attribution", encoded in ASCII, terminated with a
    single zero-valued byte.
 
-2. The [ASCII serialization of the helper party
+2. The [ASCII serialization of the match key provider
    origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
    terminated with a single zero-valued byte.
 
-3. The [ASCII serialization of the current site
+3. The [ASCII serialization of the helper party
    origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
    terminated with a single zero-valued byte.
 
-4. The single-byte key identifier from the key configuration for the helper
+4. The [ASCII serialization of the registrable domain for the current
+   site](https://url.spec.whatwg.org/#host-registrable-domain) encoded in ASCII
+   as a period-separated sequence of
+   [A-labels](https://datatracker.ietf.org/doc/html/rfc5890#section-2.3.2.1),
+   terminated with a single zero-valued byte.
+
+5. The single-byte key identifier from the key configuration for the helper
    party.
 
-5. The current epoch, encoded as an two-byte integer in network byte order.
+6. The current epoch, encoded as an two-byte integer in network byte order.
 
 This produces the following process in pseudocode:
 
 ```python
-def ipa_info(helper_origin, site_origin, key_id, epoch):
+def ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch):
     return concat(encode_str("private-attribution"),
+              ascii_origin(mkp_origin),
+              encode(0, 1),
               ascii_origin(helper_origin),
               encode(0, 1),
-              ascii_origin(site_origin),
+              ascii_origin(site_registrable_domain),
               encode(0, 1),
               encode(key_id, 1),
               encode(epoch, 2))
@@ -193,14 +204,15 @@ key to produce the message for that helper.
 This process is applied for each helper, as follows:
 
 ```python
-info = ipa_info(helper_origin, site_origin, key_id, epoch)
+info = ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch)
 enc, sctxt = SetupBaseS(pkH, info)
 ct = sctxt.Seal("", concat(mk[i], mk[i+1]))
 enc_mk = concat(enc, ct)
 ```
 
 If match keys are not a whole multiple of 4 bits in length, the combined match
-keys will need to be padded to a whole multiple of 8 bits.
+keys will need to be padded at the end of the sequence to a whole multiple of 8
+bits.
 
 The overall process produces an output that consists of an epoch and three
 objects that each comprise an encrypted match key (as a sequences of bytes), the
@@ -224,7 +236,7 @@ the secret key, the encapsulation key, and the same `info` string.
 
 ```python
 enc, ct = parse(enc_mk)
-info = ipa_info(helper_origin, site_origin, key_id, epoch)
+info = ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch)
 rctxt = SetupBaseR(enc, skR, info)
 request, error = rctxt.Open("", ct)
 ```
@@ -360,8 +372,8 @@ helper party.  This requires a three stage query process:
    where data can be submitted to each helper party.
 
 2. In the upload stage, the record collector concurrently submits data to all of
-   the helper parties.  The helper parties then execute the MPC protocol, which
-   can commence as soon as the first data becomes available.
+   the helper parties.  The helper parties then execute the MPC protocol, parts
+   of which can commence as soon as the first data becomes available.
 
 3. In the final stage, shares of the results are published by each helper and
    retrieved by the record collector.  The record collector combines these to
