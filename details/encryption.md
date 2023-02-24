@@ -182,6 +182,7 @@ This produces the following process in pseudocode:
 ```python
 def ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch):
     return concat(encode_str("private-attribution"),
+              encode(0, 1),
               ascii_origin(mkp_origin),
               encode(0, 1),
               ascii_origin(helper_origin),
