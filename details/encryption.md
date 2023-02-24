@@ -169,8 +169,10 @@ composed from:
 4. The [ASCII serialization of the registrable domain for the current
    site](https://url.spec.whatwg.org/#host-registrable-domain) encoded in ASCII
    as a period-separated sequence of
-   [A-labels](https://datatracker.ietf.org/doc/html/rfc5890#section-2.3.2.1),
-   terminated with a single zero-valued byte.
+   [A-](https://datatracker.ietf.org/doc/html/rfc5890#section-2.3.2.1) or
+   [NR-LDH](https://datatracker.ietf.org/doc/html/rfc5890#section-2.3.2.2)
+   labels (that is, the ASCII version of a domain name), terminated with a
+   single zero-valued byte.
 
 5. The single-byte key identifier from the key configuration for the helper
    party.
