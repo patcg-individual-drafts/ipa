@@ -1905,11 +1905,11 @@ We can compute the aggregation for a large number of breakdowns more efficiently
 
 ## Unbounded Scope of Incoming Information
 
-The design of IPA is intentionally designed to be compatible with measuring activities beyond the web, such as mobile devices and connected TVs. If a match key provider is able (and willing), they could extend this even further by performing user-level linkage to other contexts (e.g., email based matching with offline merchants), then distribute encrypted match keys, enabling businesses to bring offline user activity from these other contexts into the MPC.
+IPA is intentionally designed to be compatible with measuring activities beyond the web, such as mobile devices and connected TVs. If a match key provider is able (and willing), they could extend this even further by performing user-level linkage to other contexts (e.g., email based matching with offline merchants), then distribute encrypted match keys, enabling businesses to bring offline user activity from these other contexts into the MPC.
 
-The impact this may have on the overall ecosystem is not obvious. On one hand, it may drive an increase in sharing of PII between parties in an effort to gain access to this new measurement capability. On the other hand, it may cause a shift from the direct sharing of people’s individual behavior towards sharing of encrypted matchkeys, where measurement provides a much stronger differential privacy protection against leaking individual behavior.
+The impact this may have on the overall ecosystem is not obvious. On one hand, it may drive an increase in sharing of PII between parties in an effort to gain access to this new measurement capability. On the other hand, it may cause a shift from the direct sharing of people’s individual behavior towards sharing of encrypted matchkeys, where it is possible to provide much stronger differential privacy protection against leaking individual behavior.
 
-Determining if this requires mitigation is still an open question, and requires input from participants in the PATCG as well as web platform vendors.
+Determining the extent to which this might require mitigation is still an open question. PATCG participants and web platform vendors might be able to provide more input that will help resolve this issue.
 
 
 ## Other Approaches to DP or MPC
