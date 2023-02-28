@@ -1902,6 +1902,15 @@ To improve the performance of the sorting step, we could presort the encrypted r
 We can compute the aggregation for a large number of breakdowns more efficiently using sorting and prefix sum algorithms. We can use the same strategy as before by using sort and the tree-like structure to aggregate across _breakdown keys_. We omit the details here, but it may provide useful optimization in an implementation.
 
 
+## Unbounded Scope of Incoming Information
+
+The design of IPA is intentionally designed to be compatible with measuring activities beyond the web, such as mobile devices and connected TVs. If a match key provider is able (and willing), they could extend this even further by performing user-level linkage to other contexts (e.g., email based matching with offline merchants), then distribute encrypted match keys, enabling businesses to bring offline user activity from these other contexts into the MPC.
+
+The impact this may have on the overall ecosystem is not obvious. On one hand, it may drive an increase in sharing of PII between parties in an effort to gain access to this new measurement capability. On the other hand, it may cause a shift from the direct sharing of people’s individual behavior towards sharing of encrypted matchkeys, where measurement provides a much stronger differential privacy protection against leaking individual behavior.
+
+Determining if this requires mitigation is still an open question, and requires input from participants in the PATCG as well as web platform vendors.
+
+
 ## Other Approaches to DP or MPC
 
 
