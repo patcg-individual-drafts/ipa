@@ -49,6 +49,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [_Match Key_ Compression](#match-key-compression)
     * [Presorting by Timestamp and Attribution Constraint ID](#presorting-by-timestamp-and-attribution-constraint-id)
     * [Computing the Aggregation for Large Amount of Breakdowns](#computing-the-aggregation-for-large-amount-of-breakdowns)
+  * [Unbounded Scope of Incoming Information](#unbounded-scope-of-incoming-information)
   * [Other Approaches to DP or MPC](#other-approaches-to-dp-or-mpc)
     * [Privacy Preserving Mean and Covariance Estimation](#privacy-preserving-mean-and-covariance-estimation)
   * [Transparency of Queries](#transparency-of-queries)
@@ -1900,6 +1901,15 @@ To improve the performance of the sorting step, we could presort the encrypted r
 ### Computing the Aggregation for Large Amount of Breakdowns
 
 We can compute the aggregation for a large number of breakdowns more efficiently using sorting and prefix sum algorithms. We can use the same strategy as before by using sort and the tree-like structure to aggregate across _breakdown keys_. We omit the details here, but it may provide useful optimization in an implementation.
+
+
+## Unbounded Scope of Incoming Information
+
+IPA is intentionally designed to be compatible with measuring activities beyond the web, such as mobile devices and connected TVs. If a match key provider is able (and willing), they could extend this even further by performing user-level linkage to other contexts (e.g., email based matching with offline merchants), then distribute encrypted match keys, enabling businesses to bring offline user activity from these other contexts into the MPC.
+
+The impact this may have on the overall ecosystem is not obvious. On one hand, it may drive an increase in sharing of PII between parties in an effort to gain access to this new measurement capability. On the other hand, it may cause a shift from the direct sharing of people’s individual behavior towards sharing of encrypted matchkeys, where it is possible to provide much stronger differential privacy protection against leaking individual behavior.
+
+Determining the extent to which this might require mitigation is still an open question. PATCG participants and web platform vendors might be able to provide more input that will help resolve this issue.
 
 
 ## Other Approaches to DP or MPC
