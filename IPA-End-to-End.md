@@ -49,6 +49,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [_Match Key_ Compression](#match-key-compression)
     * [Presorting by Timestamp and Attribution Constraint ID](#presorting-by-timestamp-and-attribution-constraint-id)
     * [Computing the Aggregation for Large Amount of Breakdowns](#computing-the-aggregation-for-large-amount-of-breakdowns)
+  * [Unbounded Scope of Incoming Information](#unbounded-scope-of-incoming-information)
   * [Other Approaches to DP or MPC](#other-approaches-to-dp-or-mpc)
     * [Privacy Preserving Mean and Covariance Estimation](#privacy-preserving-mean-and-covariance-estimation)
   * [Transparency of Queries](#transparency-of-queries)
