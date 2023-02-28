@@ -24,7 +24,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
   * [Overview of MPC Security Model](#overview-of-mpc-security-model)
   * [Differential Privacy](#differential-privacy)
     * [Differentially Private Aggregate Queries](#differentially-private-aggregate-queries)
-    * [<a id="budget"></a>Differential Privacy Budget Management](#a-idbudgetadifferential-privacy-budget-management)
+    * [Differential Privacy Budget Management](#differential-privacy-budget-management)
 * [Protocol](#protocol)
   * [Setup](#setup)
     * [Commitments](#commitments)
