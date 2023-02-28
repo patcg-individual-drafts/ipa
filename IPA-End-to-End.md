@@ -132,13 +132,13 @@ The _report collector_ assigns a number of values to _source reports_ and _trigg
 
 * A _breakdown key_ is associated with each _source report_ in a query.  The _breakdown key_ is used to split _source reports_ into groups for aggregation.  A _breakdown key_ can represent an advertising campaign, an advertising channel, a set of creatives, or any combination of these with other data from the event.  The output of the query includes an aggregate value for each _breakdown key_.
 
-* A _trigger value_ is associated with each _trigger report_.  If the _trigger report_ is matched with a _source reports_ by the MPC, the _trigger value_ contributes to the aggregated value for the _breakdown key_ from the _source report_.  Note that [sensitivity capping](#capping) might mean that some _trigger values_ do not contribute to the final result.
+* A _trigger value_ is associated with each _trigger report_.  If the _trigger report_ is matched with a _source reports_ by the MPC, the _trigger value_ contributes to the aggregated value for the _breakdown key_ from the _source report_.  Note that [sensitivity capping](#user-level-sensitivity-capping) might mean that some _trigger values_ do not contribute to the final result.
 
 * A _attribution constraint ID_ can be added to both _source reports_ and _trigger reports_.  Reports with different _attribution constraint IDs_ will not be matched to each other, which allows a site to include _source reports_ and _trigger reports_ that it does not wish to have attributed together.  For instance, if the goal is to perform attribution for distinct product segments, assigning a different _attribution constraint ID_ to reports from each distinct segment will ensure that impressions from one segment is not attributed to conversions from the other segment.
 
-The _report collector_ uses the information it receives about events to decide whether to include an event in the query and what values to attach to the event.  Choosing which events are included and the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to [differential privacy constraints](#budget) on those queries.
+The _report collector_ uses the information it receives about events to decide whether to include an event in the query and what values to attach to the event.  Choosing which events are included and the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to differential privacy constraints on those queries.
 
-Each site has a finite [privacy budget](#budget) for making queries.  The total number of queries is not directly limited, but each query made by (or for) a _website/app_ expends a portion of a finite differential privacy budget. The smaller the portion that is expended, the more differential privacy noise that is added to any results.
+Each site has a finite [privacy budget](#differential-privacy-budget-management) for making queries.  The total number of queries is not directly limited, but each query made by (or for) a _website/app_ expends a portion of a finite differential privacy budget. The smaller the portion that is expended, the more differential privacy noise that is added to any results.
 
 The budget is associated with the _website/app_ that provides _source reports_ for a _source fanout query_ or the _website/app_ that provides _trigger reports_ for a _trigger fanout query_.  A _website/app_ can provide _source reports_ for _trigger fanout queries_ on any other _website/app_ without expending their budget; similarly, no budget is spent by providing _trigger reports_ to another _website/app_ for _source fanout queries_.
 
@@ -167,7 +167,7 @@ In order to provide differential privacy, aggregate results have differentially 
 Adding more noise to an aggregate result can make the value less useful. A small ε means more noise and better privacy; a large ε means less noise and better utility. To ensure that noise is finite, the amount that each individual could contribute to the aggregate needs to be bounded. This bounding is done by sensitivity capping.
 
 
-#### <a id="capping"></a>Sensitivity Capping
+#### Sensitivity Capping
 
 In order to provide differential privacy at the level of individual user contributions (as identified by _match keys_), each _match key_ must be limited in the total contribution it can make to the aggregate. This maximum contribution is the _sensitivity_ of the attribution function, and together with the ε, determines the amount of noise required to achieve differential privacy.
 
@@ -183,7 +183,7 @@ The output of each query is a sum per _breakdown key_. The contribution from a s
 Random noise is added to each breakdown, using ε and the _sensitivity_ to inform the variance of the noise distribution. Noise will be added to each breakdown sum to provide global DP. The exact noise distribution (Laplace, Gauss, ...) and method of application (in-MPC, by helpers, ...) has not yet been determined. This needs to consider the effect of the DP composition theorem, especially for multiple queries.
 
 
-### <a id="budget"></a>Differential Privacy Budget Management
+### Differential Privacy Budget Management
 
 The previous section focuses on applying differential privacy to individual queries. However, we need to further design a system such that over an _epoch_, the amount of information released about people is bounded. Specifically, we propose that for a given _epoch_ and _website/app_ (represented by a single _report collector_), individuals (represented by _match keys_) can have a bounded impact on the results, as measured by ε differential privacy.
 
