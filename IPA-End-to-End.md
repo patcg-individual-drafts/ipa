@@ -18,6 +18,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
   * [Definitions](#definitions)
     * [Parties Involved](#parties-involved)
     * [Other Key Terms](#other-key-terms)
+    * [Relationship Between _Websites/Apps_ and _Delegate Report Collectors_](#relationship-between-websitesapps-and-delegate-report-collectors)
   * [Attribution Measurement](#attribution-measurement)
     * [Gathering Events](#gathering-events)
     * [Types of Queries](#types-of-queries)
@@ -85,6 +86,10 @@ There are a number of different parties that are involved with the protocol in o
 4. _**Breakdown keys**_: A key, specified by the _report collector_, which allows for producing aggregates across many groups (or breakdowns.)
 5. _**Attribution Constraint ID**_: An identifier, specified by the _report collector_, to denote if a given pair of _source_ and _trigger events_ can be attributed (beyond having the same _match key_.)
 
+
+### Relationship Between _Websites/Apps_ and _Delegate Report Collectors_
+
+The privacy goals of the IPA proposal are achieved by limiting (through differential privacy) the amount of information about people revealed to individual _websites/apps_. However, many (if not most) _websites/apps_ that use this API will likely do so by working with one or more service providers, which we call _delegated report collectors_. This results in a somewhat complex many-to-many relationship between _websites/apps_ and _delegated report collectors_. For the sake of this document, a _report collector_ is assumed to work with a single _website/app_; in the case where the same service provider works with multiple _websites/apps_, we consider those distinct _report collectors_. Each _report collector_ may be one of many _report collectors_ for that _website/app_, which is primarily meaningful in differential privacy budgeting, [discussed below.](#differential-privacy-budget-management)
 
 ## Attribution Measurement
 
@@ -173,15 +178,16 @@ Random noise is added to each breakdown, using ε and the _sensitivity_ to infor
 
 ### Differential Privacy Budget Management
 
-The previous section focuses on applying differential privacy to individual queries. However, we need to further design a system such that over an _epoch_, the amount of information released about people is bounded. Specifically, we propose that for a given _epoch_ and _website/app_ (represented by a single _report collector_), individuals (represented by _match keys_) can have a bounded impact on the results, as measured by ε differential privacy.
+The previous section focuses on applying differential privacy to individual queries. However, we need to further design a system such that over an _epoch_, the amount of information released about people is bounded. Specifically, we propose that for a given _epoch_ and _website/app_ (represented by one or more _report collectors_), individuals (represented by _match keys_) can have a bounded impact on the results, as measured by ε differential privacy.
 
- In our current approach, we achieve this by providing each _report collector_ with a budget, ε for the given _website/app_ they are querying on behalf of. When _report collectors_ run queries they will specify how much budget to use, ε<sub>i</sub>, which will be deducted from their remaining budget. For example, given an _epoch_ limit of ε, a _report collector_ could perform 10 queries, each with global DP applied at ε/10, or a more complicated set of queries such as three with ε/5 and four with ε/10. (Note that smaller ε<sub>i</sub> result in _more_ noise and, thus, _more_ privacy.)
+In our current approach, we achieve this by providing each _website/app_ with a budget, ε. That _website/app_ is then able to allocate that budget across their _report collectors_ such that each _report collector_ has budget ε<sub>r</sub> (and the sum of all ε<sub>r</sub> = ε. _Websites/apps_ will need to commit to a specific budget allocation, and will not be able to change that commitment until the next epoch. The mechanism for managing this commitment is an open problem.
+
+When _report collectors_ run queries they will specify how much budget to use, ε<sub>i</sub>, which will be deducted from their remaining budget. For example, given an _epoch_ limit of ε<sub>r</sub>, a _report collector_ could perform 10 queries, each with global DP applied at ε<sub>r</sub>/10, or a more complicated set of queries such as three with ε<sub>r</sub>/5 and four with ε<sub>r</sub>/10. When split over multiple queries, smaller ε<sub>i</sub> values result in _more_ noise on each query; each query has greater privacy protection, but the overall privacy loss is similar.
 
 Each query will include both the budget, ε<sub>i</sub>, and the sensitivity cap, which together determine the amount of noise required for that query. There is a tradeoff between noise level and sensitivity cap: larger noise allows less sensitivity capping, i.e., larger values after the capping. The exact tradeoff between noise level and cap would be chosen by the _report collector_ according to how they want to use their budget. Statistically, this is a tradeoff between bias (introduced by the capping) and accuracy (decreased by the differentially private noise.)
 
-The _helper party network_ will need to maintain this budget, per _website/app_, over the course of an _epoch_, preventing _report collectors_ from issuing additional queries once that budget is exhausted. At the beginning of the next _epoch_, every _report collector’s_ budget will refresh to ε. Note that in infinite time, the information revealed also goes to infinity; our aim here is to control how quickly that divergence happens.
+The _helper party network_ will need to maintain this budget, per _report collector_ and reflecting the commitments made by _websites/apps_, over the course of an _epoch_, preventing _report collectors_ from issuing additional queries once that budget is exhausted. At the beginning of the next _epoch_, every _report collector’s_ budget will refresh to ε<sub>r</sub> (barring any changes in allocation by the respective _website/app_.) Note that in infinite time, the information revealed also goes to infinity; our aim here is to control how quickly that divergence happens.
 
-The mechanism for enforcing that only a single _report collector_ can issue queries for a given _website/app_ is an open problem.
 
 # Protocol
 
