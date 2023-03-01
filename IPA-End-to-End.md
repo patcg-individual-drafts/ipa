@@ -128,7 +128,7 @@ There are two types of queries which can be issued by a _report collector_, each
 
 * A _trigger fanout query_ helps a site that buys ads to understand how its advertising is helping to drive outcomes on its _website/app_.  A _trigger fanout query_ can only contain _trigger reports_ from a single _source website/app_.  A _trigger fanout query_ includes _source reports_ from multiple sites, where each report might represent an ad impression or click.
 
-Before making a query, _source websites/apps_ and _trigger websites/apps_ respectively generate _source reports_ and _trigger_reports_ by associating _encrypted match keys_ with other values. A collection of _source reports_ and _trigger reports_ with associated values determine what a query result means:
+Before making a query, _source websites/apps_ and _trigger websites/apps_ provide a _report collector_ with additional information, enabling it to generate _source reports_ and _trigger_reports_ by associating _encrypted match keys_ with other values. A collection of _source reports_ and _trigger reports_ with associated values determine what a query result means:
 
 * A _breakdown key_ is associated with each _source report_ in a query.  The _breakdown key_ is used to split _source reports_ into groups for aggregation.  A _breakdown key_ can represent an advertising campaign, an advertising channel, a set of creatives, or any combination of these with other data from the event.  The output of the query includes an aggregate value for each _breakdown key_.
 
@@ -136,7 +136,7 @@ Before making a query, _source websites/apps_ and _trigger websites/apps_ respec
 
 * A _attribution constraint ID_ can be associated with both _source reports_ and _trigger reports_.  Reports with different _attribution constraint IDs_ will not be matched to each other, which allows a site to include _source reports_ and _trigger reports_ that it does not wish to have attributed together.  For instance, if the goal is to perform attribution for distinct product segments, assigning a different _attribution constraint ID_ to reports from each distinct segment will ensure that impressions from one segment is not attributed to conversions from the other segment.
 
-The _report collector_ uses these associated values on events it receives to construct queries.  Choosing which events are included or adjusting the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to differential privacy constraints on those queries.
+The _report collector_ uses these associated values on events it receives to construct queries.  Choosing which events are included and the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to differential privacy constraints on those queries.
 
 Each site has a finite [privacy budget](#differential-privacy-budget-management) for making queries.  The total number of queries is not directly limited, but each query made by (or for) a _website/app_ expends a portion of a finite differential privacy budget. The smaller the portion that is expended, the more differential privacy noise that is added to any results.
 
