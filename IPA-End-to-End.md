@@ -21,7 +21,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Relationship Between _Websites/Apps_ and _Delegate Report Collectors_](#relationship-between-websitesapps-and-delegate-report-collectors)
   * [Attribution Measurement](#attribution-measurement)
     * [Gathering Events](#gathering-events)
-    * [Types of Queries](#types-of-queries)
+    * [Querying](#querying)
   * [Overview of MPC Security Model](#overview-of-mpc-security-model)
   * [Differential Privacy](#differential-privacy)
     * [Differentially Private Aggregate Queries](#differentially-private-aggregate-queries)
@@ -126,15 +126,28 @@ These events will occur on different _websites/apps_, so they then need to be ga
 The bulk of the information that is collected for each event is chosen by the _website/app_ and is not passed to the _user agent_.  This information is not protected, so _websites/apps_ can choose what information they share about each event.
 
 
-### Types of Queries
+### Querying
 
-There are two types of queries which can be issued by a _report collector:_ a _source fanout query_ and _a trigger fanout query_. Both types take the same form as shown above in the SQL query, however a _source fanout query_ is composed of _source reports_ from a single _source website/app_, and _trigger reports_ from multiple _trigger websites/apps_. As such, the `attribution_constraint_id` is critical to _source fanout queries_, to ensure _trigger events_ are not spuriously attributed to _source events_ from unrelated campaigns.
+There are two types of queries which can be issued by a _report collector_, each designed to provide information to a single site:
 
-Conversely, a _trigger fanout query_ is composed of _trigger reports_ from a single _trigger website/app_, and _source reports_ from multiple _source websites/apps_. When a _report collector_, acting on behalf of a specific _source_/_trigger websites/app_, issues a query, the query must either be a _source fanout query_ with _source reports_ from that _website/app_, or a _trigger fanout query_ with _trigger reports_ from that _website/app_.
+* A _source fanout query_ is designed to help a _website/app_ understand the effect that the ads it shows have on outcomes for its advertisers.  A _source fanout query_ can only contain _source reports_ from a single _source website/app_.  A _source fanout query_ can include _trigger reports_ from multiple sites, where each report might represent a conversion event.
 
-When making a _fanout query_, the _report collector_ uses the information it receives about events to decide whether to include an event in the query and what value is attached to the event.  The _report collector_ also assigns a _breakdown key_ to each _source event_ and a _trigger value_ to each _trigger value_.  The _report collector_ also assigns a value of its choice for the _attribution constraint ID_ of all events.
+* A _trigger fanout query_ helps a site that buys ads to understand how its advertising is helping to drive outcomes on its _website/app_.  A _trigger fanout query_ can only contain _trigger reports_ from a single _source website/app_.  A _trigger fanout query_ includes _source reports_ from multiple sites, where each report might represent an ad impression or click.
 
-Choosing which events are included and the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to [differential privacy constraints](#differential-privacy-budget-management) on those queries.
+Before making a query, _source websites/apps_ and _trigger websites/apps_ provide a _report collector_ with additional information, enabling it to generate _source reports_ and _trigger_reports_ by associating _encrypted match keys_ with other values. A collection of _source reports_ and _trigger reports_ with associated values determine what a query result means:
+
+* A _breakdown key_ is associated with each _source report_ in a query.  The _breakdown key_ is used to split _source reports_ into groups for aggregation.  A _breakdown key_ can represent an advertising campaign, an advertising channel, a set of creatives, or any combination of these with other data from the event.  The output of the query includes an aggregate value for each _breakdown key_.
+
+* A _trigger value_ is associated with each _trigger report_.  If the _trigger report_ is matched with a _source reports_ by the MPC, the _trigger value_ contributes to the aggregated value for the _breakdown key_ from the _source report_.  Note that [sensitivity capping](#user-level-sensitivity-capping) might mean that some _trigger values_ do not contribute to the final result.
+
+* A _attribution constraint ID_ can be associated with both _source reports_ and _trigger reports_.  Reports with different _attribution constraint IDs_ will not be matched to each other, which allows a site to include _source reports_ and _trigger reports_ that it does not wish to have attributed together.  For instance, if the goal is to perform attribution for distinct product segments, assigning a different _attribution constraint ID_ to reports from each distinct segment will ensure that impressions from one segment is not attributed to conversions from the other segment.
+
+The _report collector_ uses these associated values on events it receives to construct queries.  Choosing which events are included and the values that are associated with each gives the _report collector_ the ability to make different queries from the same set of events, subject only to differential privacy constraints on those queries.
+
+Each site has a finite [privacy budget](#differential-privacy-budget-management) for making queries.  The total number of queries is not directly limited, but each query made by (or for) a _website/app_ expends a portion of a finite differential privacy budget. The smaller the portion that is expended, the more differential privacy noise that is added to any results.
+
+The budget is associated with the _website/app_ that provides _source reports_ for a _source fanout query_ or the _website/app_ that provides _trigger reports_ for a _trigger fanout query_.  A _website/app_ can provide _source reports_ for _trigger fanout queries_ on any other _website/app_ without expending their budget; similarly, no budget is spent by providing _trigger reports_ to another _website/app_ for _source fanout queries_.
+
 
 
 ## Overview of MPC Security Model
