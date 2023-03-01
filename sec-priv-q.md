@@ -22,11 +22,14 @@ identify a user agent.
 
 IPA allows any site to set a match key: the idea is that a site can provide a
 match key using knowledge they have that can connect a user to multiple user
-agents.  Sites can request that the user agent use the match key provided by any
-other site.  The user agent provides a fallback value if no value has been set.
+agents.  For example, websites on which people log in using multiple user agents
+could use login credentials.  Sites can request that the user agent use the
+match key provided by any other site.  The user agent provides a fallback value
+if no value has been set, which will enable attribution for things that a user
+does on that device.
 
-An encrypted match key is secret-shared version of a match key that is encrypted
-toward each of the three entities that form a selected helper party network.
+An encrypted match key is a secret-shared version of a match key that is
+encrypted toward each of the three entities that form a helper party network.
 
 Provided that two of the three parties that form the helper party network do not
 reveal the values they receive to each other and they faithfully execute the
@@ -39,7 +42,8 @@ security* in the *two out of three honest majority* setting.  In this setting,
 both privacy for inputs and security against tampering are guaranteed as long as
 two of the three helper parties faithfully executes the protocol.  It takes two
 corrupted or malicious helpers that actively work together to access the input
-data provided about users or to spoil the output of the computation.
+data provided about users or to spoil the output of the computation.  Any attack
+by a single helper party can only cause the protocol to abort.
 
 User agent implementers, on behalf of their users, need to select helper parties
 that can be trusted to correctly execute the protocol and to only reveal the
@@ -50,11 +54,11 @@ implementations to execute the protocol correctly.
 
 Each top-level browsing context receives a unique encryption and secret-sharing
 of the chosen match key, which ensures that the information visible to the site
-or individual helper parties does not reveal any correlation between users.  A
-top-level context can make its value available to nested contexts; nested
-contexts do not receive a different value.  This value is retained by the user
-agent in site-specific storage; subsequent requests result in the same value
-being returned.
+or individual helper parties does not reveal any cross-site correlation between
+users.  A top-level context can make its value available to nested contexts;
+nested contexts do not receive a different value.  This value is retained by the
+user agent in site-specific storage; subsequent requests result in the same
+value being returned.
 
 
 ## Key Challenges
@@ -62,10 +66,11 @@ being returned.
 There two major components to this work that require special attention from a
 privacy perspective:
 
-1. This proposal uses information - match keys - that might be used to perform
-   cross-site tracking.  The API allows any web site to request and receive this
-   information from user agents.  The proposal includes a number of measures
-   that are designed to protect this information.
+1. This proposal uses information - match keys - that could be used to perform
+   cross-site tracking if the protections in the proposal were to fail.  The API
+   allows any web site to request and receive this information from user agents.
+   The proposal includes multiple measures that are designed to protect this
+   information.
 
 2. The aggregated information that is provided to sites is based on the the use
    of match keys.  The use of differential privacy ensures that there is some
@@ -75,7 +80,7 @@ privacy perspective:
    at which sites gain this information.
 
 Any conclusions about the privacy properties of the API will depend on an
-assessment of the adequacy of both of these protections.
+assessment of the adequacy of the design for both types of protection.
 
 
 ## Standard Questions
