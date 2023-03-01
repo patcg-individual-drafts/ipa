@@ -75,7 +75,7 @@ privacy perspective:
    at which sites gain this information.
 
 Any conclusions about the privacy properties of the API will depend on an
-assessment of the adequacy both of these protections.
+assessment of the adequacy of both of these protections.
 
 
 ## Standard Questions
