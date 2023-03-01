@@ -128,7 +128,7 @@ There are two types of queries which can be issued by a _report collector_, each
 
 * A _trigger fanout query_ helps a site that buys ads to understand how its advertising is helping to drive outcomes on its _website/app_.  A _trigger fanout query_ can only contain _trigger reports_ from a single _source website/app_.  A _trigger fanout query_ includes _source reports_ from multiple sites, where each report might represent an ad impression or click.
 
-The _report collector_ assigns a number of values to _source reports_ and _trigger reports_ when making a query.  The values that are assigned to each report determine what the query results mean:
+Before making a query, _source websites/apps_ and _trigger websites/apps_ respectively generate _source reports_ and _trigger_reports_ by associating _encrypted match keys_ with other values. A collection of _source reports_ and _trigger reports_ with associated values determine what a query result means:
 
 * A _breakdown key_ is associated with each _source report_ in a query.  The _breakdown key_ is used to split _source reports_ into groups for aggregation.  A _breakdown key_ can represent an advertising campaign, an advertising channel, a set of creatives, or any combination of these with other data from the event.  The output of the query includes an aggregate value for each _breakdown key_.
 
