@@ -119,8 +119,8 @@ acceptable mechanism.  Differential privacy mechanisms also require choosing
 $\epsilon$ and maybe $\delta$ values.  These values determine the amount of
 noise that is added and the rate at which sites are able to accumulate
 information.  No firm conclusions have been reached on this point, though we
-have a tentative design that would allow different user agents (or even users)
-to set different values for these parameters.
+have a tentative design that would allow different user agents to set different
+values for these parameters.
 
 Even with differential privacy, sites might gain more information about users
 over longer periods.  We believe this to be a tolerable privacy loss as it is
