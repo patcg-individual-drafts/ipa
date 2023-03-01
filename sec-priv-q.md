@@ -94,6 +94,23 @@ activity by the same user across different sites.  The design of the MPC
 protocol where that value is used ensures that - provided that the MPC is
 executed correctly by 2 of 3 parties - this value is never revealed to anyone.
 
+The IPA MPC protocol produces an aggregate report about the cross-site activity
+of people.  Aggregates are protected with differential privacy.  The information
+is provided so that sites can measure the performance of their use of
+advertising, which - in most cases - involves activity that crosses between
+sites.
+
+A lot can be said about the relative virtues of advertising.  That this feature
+is "necessary" is not something everyone will agree with, often based on their
+perception of advertising and advertising practices.  Advertising has a bit of a
+bad rap.  However, it is basically not possible to operate any sort of
+advertising without being able to measure it.
+
+Alternatives to this style of approach either involve tracking or surveys and
+panels.  Tracking is widely used in the industry today, which has not been good
+for privacy.  Surveys and panels are used to understand advertising, but they
+are expensive and slow are too inefficient for general use.
+
 ### Do features in your specification expose the minimum amount of information
     necessary to enable their intended uses?
 
