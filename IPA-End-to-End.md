@@ -53,6 +53,9 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Privacy Preserving Mean and Covariance Estimation](#privacy-preserving-mean-and-covariance-estimation)
   * [Transparency of Queries](#transparency-of-queries)
   * [Oblivious Algorithms](#oblivious-algorithms)
+  * [Webviews and Embedded Browsers](#webviews-and-embedded-browsers)
+    * [Applications that can access web content](#applications-that-can-access-web-content)
+    * [Applications that cannot access web content](#applications-that-cannot-access-web-content)
 * [Thanks and Acknowledgements](#thanks-and-acknowledgements)
 
 ## Definitions
