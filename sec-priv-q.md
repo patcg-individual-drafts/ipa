@@ -57,6 +57,27 @@ agent in site-specific storage; subsequent requests result in the same value
 being returned.
 
 
+## Key Challenges
+
+There two major components to this work that require special attention from a
+privacy perspective:
+
+1. This proposal uses information - match keys - that might be used to perform
+   cross-site tracking.  The API allows any web site to request and receive this
+   information from user agents.  The proposal includes a number of measures
+   that are designed to protect this information.
+
+2. The aggregated information that is provided to sites is based on the the use
+   of match keys.  The use of differential privacy ensures that there is some
+   protection for the contribution of individual users.  With no limit to the
+   time over which queries can be made, the privacy loss experienced by
+   participating users is similarly unbounded.  The design only limits the rate
+   at which sites gain this information.
+
+Any conclusions about the privacy properties of the API will depend on an
+assessment of the adequacy both of these protections.
+
+
 ## Standard Questions
 
 ### What information might this feature expose to Web sites or other parties,
