@@ -85,8 +85,7 @@ assessment of the adequacy of the design for both types of protection.
 
 ## Standard Questions
 
-### What information might this feature expose to Web sites or other parties,
-    and for what purposes is that exposure necessary?
+### What information might this feature expose to Web sites or other parties, and for what purposes is that exposure necessary?
 
 The IPA API provides top-level browsing contexts with an encrypted,
 secret-shared match key.  Fundamentally, this contains information that can link
@@ -111,8 +110,7 @@ panels.  Tracking is widely used in the industry today, which has not been good
 for privacy.  Surveys and panels are used to understand advertising, but they
 are expensive and slow are too inefficient for general use.
 
-### Do features in your specification expose the minimum amount of information
-    necessary to enable their intended uses?
+### Do features in your specification expose the minimum amount of information necessary to enable their intended uses?
 
 That's a difficult question to answer simply.  There are a great many trade-offs
 to make in this space.
@@ -157,8 +155,7 @@ useful the information is for performing attribution.
 We are seeking to gather more information before making decisions regarding
 differential privacy mechanisms and parameters.
 
-### How do the features in your specification deal with personal information,
-    personally-identifiable information (PII), or information derived from them?
+### How do the features in your specification deal with personal information, personally-identifiable information (PII), or information derived from them?
 
 The IPA API provides pseudo-identifiers for individuals and makes those
 identifiers available for use in an MPC system.  These identifiers are protected
@@ -169,8 +166,7 @@ MPC operators from accessing values.
 
 See previous answers.
 
-### Do the features in your specification introduce new state for an origin that
-    persists across browsing sessions?
+### Do the features in your specification introduce new state for an origin that persists across browsing sessions?
 
 Yes.  Though the explainer does not deal with this in great detail, our intent
 is to ensure that state clearing events, such as clearing cookies, will result
@@ -183,8 +179,7 @@ narrowly targeted, somewhat challenging to reason about.  We haven't worked
 through all of the requirements and constraints in this area, such that we might
 infer the correct design.
 
-### Do the features in your specification expose information about the
-    underlying platform to origins?
+### Do the features in your specification expose information about the underlying platform to origins?
 
 No.  However, if a compatible system is developed in the underlying platform for
 the management of match keys, user agent implementations might move to unify the
@@ -199,8 +194,7 @@ No.
 
 No.
 
-### Do features in this specification enable new script execution/loading
-    mechanisms?
+### Do features in this specification enable new script execution/loading mechanisms?
 
 No.
 
@@ -208,13 +202,11 @@ No.
 
 No.
 
-### Do features in this specification allow an origin some measure of control
-    over a user agent’s native UI?
+### Do features in this specification allow an origin some measure of control over a user agent’s native UI?
 
 No.
 
-### What temporary identifiers do the features in this specification create or
-    expose to the web?
+### What temporary identifiers do the features in this specification create or expose to the web?
 
 The match key itself is not exposed to the web, so this question does not apply.
 
@@ -225,16 +217,14 @@ unlinkable encryption is generated if site storage is cleared (and the
 underlying value might also need to be randomized too, though this question
 still hasn't been completely resolved; see above).
 
-### How does this specification distinguish between behavior in first-party and
-    third-party contexts?
+### How does this specification distinguish between behavior in first-party and third-party contexts?
 
 Information provided by the API is only provided to the top-level browsing
 context (a.k.a., the "first-party context").  Other sites that contribute to the
 content of a web page only receive a copy of the value provided to the top-level
 site, but only if the top-level site permits it.
 
-### How do the features in this specification work in the context of a browser’s
-    Private Browsing or Incognito mode?
+### How do the features in this specification work in the context of a browser’s Private Browsing or Incognito mode?
 
 This question is not entirely resolved.  User agents that want maximum privacy
 protection - which seems likely in this particular case - can randomize the
@@ -245,8 +235,7 @@ sites a reason to discriminate against users.
 
 The same strategy can be employed for users who opt out of use of the API.
 
-### Does this specification have both "Security Considerations" and "Privacy
-    Considerations" sections?
+### Does this specification have both "Security Considerations" and "Privacy Considerations" sections?
 
 It's a primarily functional explainer right now, with a strong emphasis on these
 aspects throughout.  We expect that security and privacy will similarly feature
@@ -257,8 +246,7 @@ document](https://github.com/patcg/docs-and-reports/tree/main/threat-model).
 That document will be the basis for further analysis of this proposal (if the
 group chooses this specific design to continue with).
 
-### Do features in your specification enable origins to downgrade default
-    security protections?
+### Do features in your specification enable origins to downgrade default security protections?
 
 No.
 
