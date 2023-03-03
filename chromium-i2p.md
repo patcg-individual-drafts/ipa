@@ -1,5 +1,5 @@
 # Subject of email
-[Intent to Prototype] Interoperable Private Attribution
+[Intent to Prototype] Interoperable Private Attribution sent to blink-dev@chromium.com
 
 # Contact emails
 richaj@meta.com (Richa Jain, Meta)
