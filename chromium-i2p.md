@@ -12,7 +12,7 @@ https://github.com/patcg-individual-drafts/ipa/blob/main/IPA-End-to-End.md
 Under development at https://github.com/patcg-individual-drafts/ipa
 
 # Design Doc One-Pager
-https://docs.google.com/document/d/1Pe8gFHhKgFlvKPQEXv1zaN7ne2VYXQYiWDlg8G3hTgo
+https://docs.google.com/document/d/1LBv-Sg84jyq3Em474kgEbOaJ1GY6XsQKj6TlAlnIkyw
 
 # Summary
 Interoperable Private Attribution (IPA) is an API for privacy-preserving advertising attribution. Attribution means counting the number of "conversions", for example purchases, that follow an ad interaction, for example viewing an ad. IPA preserves privacy by using cryptography and a network of helper parties who are trusted not to collude or be collectively coerced. See https://github.com/patcg-individual-drafts/ipa
