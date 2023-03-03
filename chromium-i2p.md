@@ -1,3 +1,6 @@
+# Subject of email
+[Intent to Prototype] Interoperable Private Attribution
+
 # Contact emails
 richaj@meta.com (Richa Jain, Meta)
 btsavage@meta.com (Ben Savage, Meta)
