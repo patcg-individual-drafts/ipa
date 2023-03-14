@@ -1927,42 +1927,76 @@ An example of an oblivious algorithm is the bitonic sorting algorithm [[1]](http
 The last-touch attribution algorithm described above is oblivious. The algorithm can be parallelized into a large number of small computations that only compare two rows at a time. The pairs of rows which will be compared are always the same, regardless of the values of the input. As such, the _helper party_ learns nothing about the input, and can easily parallelize all of these comparisons.
 
 
-## Webviews and Embedded Browsers
+## Web Views and Embedded Browsers
 
 On some operating systems, browser components can be integrated into applications in a number of ways.
-Two models are considered here:
+Two models are considered for these web views:
 
 1. Where the embedded browser component permits the application to access (or modify) content.
+   Examples of these include [Windows WebView2](https://learn.microsoft.com/en-us/windows/apps/design/controls/web-view),
+   [iOS WKWebView](https://developer.apple.com/documentation/webkit/wkwebview), or
+   [Android WebView](https://developer.android.com/develop/ui/views/layout/webapps).
 
 2. Where the operation of the browser component is not accessible to the application.
+   Examples of this approach are [Android Custom Tabs](https://developer.chrome.com/docs/android/custom-tabs/) and
+   [SFSafariViewController](https://developer.apple.com/documentation/safariservices/sfsafariviewcontroller).
+
+In all cases, IPA provides the greatest benefit if there is a single system-wide (or user-wide) store of match keys.
+To facilitate this, support for storing and managing match keys at the level of the operating system provides the greatest utility.
+A system-wide utility will ensure that attribution can work across different apps, including browsing.
+Without a system-wide store, attribution can still work, though it will be limited to impressions and conversions in the same app.
+
 
 ### Applications that can access web content
 
-If the embedded browser makes content accessible to the application, then conceptually the application needs to act as an independent browser.
-The application should have distinct storage from the regular browser so that the application is unable to access cookies or other data that is shared by users and sites.
+If the embedded browser makes content accessible to the application, then the application is effectively acting as an independent browser.
+An application therefore needs distinct storage from the regular browser so that one application cannot access private information hosted by another application or browser.
 
-Note that this is an imperfect model because users can be presented with login pages on sites, which they might use.
-Application often use embedded browsers to manage login and so people are accustomed to having to log in, even if that is not a great security practice.
+When IPA integrates into this sort of environment, the `getEncryptedMatchKey()` API needs to return an encryption of the match key that is specific to the combination of application and site.
+The same value cannot be used across different apps or sites, or the ciphertext that is provided might link activity across contexts.
+Integration of the IPA API at the system level therefore needs to segment any storage of _encrypted match keys_ based on the identity of the application that requests it, in addition to the site.
 
-When IPA integrates into this sort of environment, the `getEncryptedMatchKey()` API ideally returns a value that is specific to the application, not the active site.
-This approach would require operating system integration and some means of identifying the application that is compatible with the registrable domain used to identify sites on the web.
-The main drawback being that sites that are not aware of this constraint will not be able to use the value they obtain as it is bound to the application.
+Note that this is an imperfect model because activity on sites shown in a web view might be linkable to activity in browser or other apps.
+Many sites attempt to detect webviews and disable login, which can prevent more direct forms of linkability.
+However, some applications use embedded browsers to manage login and authorization of access to online services.
+Consequently, people can become accustomed to having to log in, despite that being a poor security practice, and in doing so create strong correlation between contexts.
 
-Without OS integration that at least provides the embedded browser with a way to identify the application, the IPA API might need to be disabled.
+Aside from partitioning the storage of _encrypted match keys_ by app, no other adjustment is being considered.
+Sites can use match keys as usual.
+The app will be able to view or even change the encrypted match key, but the value will not reveal anything.
+This access might allow actions that could be seen to be malicious, such as:
 
-This can be partly addressed by making the site aware of the fact that it is embedded this way.
-Sites can then participate in attribution as before, provided that events that the site is associated with the event by the _report collector_.
-For instance, by setting a different _breakdown key_, the _record collector_ could allow in-app impressions to be aggregated separately to in-browser impressions.
+* An app can violate user privacy by _encrypted match keys_ to different sites that allow those sites to link user activity.
 
-A malicious application might attempt to claim credit for conversions based on impressions in the embedded application.
-We offer no mitigation for this attack as there is no possible defense.
-There is no way to distinguish between an application that embeds a web view and one that provides a complete browser implementation of its own.
+* An app that captures an _encrypted match key_ from site content might be able to provide the value to helpers against the wishes of the site that is involved.
+
+* An app can provide sites with bogus _encrypted match keys_ or _encrypted match keys_ sourced from other contexts with a goal of spoiling attribution results.
+
+* An app might deny sites in the web view with access to the IPA APIs.
+
+* An app might misrepresent the identity of the site to the operating system, obtaining _encrypted match keys_ that are attributed to a site of its choice.
+
+An app that behaves in this way is no different than operating an untrustworthy or malicious browser.
+For the most part, the risks are attributable to use of malicious software.
+However, The misrepresentation of site identity by an app allows the site to worsen privacy in a way that is unique to IPA.
+The _encrypted match keys_ obtained in this way can be used in IPA queries across multiple sites, with a separate [privacy budget](https://github.com/patcg-individual-drafts/ipa/blob/main/IPA-End-to-End.md#differential-privacy-budget-management) for each site.
+Because the _encrypted match keys_  are known to be for the same person, these queries release more information about that person than is intended.
+
+Limits on the number of _encrypted match keys_ is an option being explored for managing sensitivity capping in some designs for scaling the IPA MPC components.
+Having per-app _encrypted match keys_ works against that goal, as _encrypted match keys_ might come from many more apps than different devices.
+
+A system might offer control over how apps participate in the API, including per-app authorization of access to the IPA APIs.
+Apps that are denied access to the API can receive encryptions of a randomized match key, which might be stable (and so enable attribution within the app) or randomized (preventing all use of attribution).
+
+Further investigation will be needed to better understand the implications of making IPA available to web views that are accessible to apps.
+
 
 ### Applications that cannot access web content
 
-In this case, the application can direct the browser to load a specific URL, but otherwise has no access to the content of sites, either to view it or modify it.
-It is possible to treat this form of embedding as an extension of another browser, rather than being considered part of the applocation.
-Provided the embedding application cannot access content, read cookies, or otherwise affect operation, the browser might provide sites with the cookies that are used in the full browsing experience.
+The use of custom tabs allows an application to use a browser, but without gaining access to the content of sites, either to view it or modify it.
+It is possible to treat this form of embedding as an extension of another browser, rather than being considered part of the application.
+Other than choosing a URL, the embedding application cannot access content, read cookies, or otherwise affect how the browser operates.
+This allows the browser to provide sites with the cookies that are used in the full browsing experience.
 
 In this situation, the _encrypted match key_ can be provided to the site as though this were part of a normal browsing session.
 The site could, if it were made aware of its state, share information with the application, but it would only do so if it chose to, just like in other IPA scenarios.
