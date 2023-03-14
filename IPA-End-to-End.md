@@ -1941,10 +1941,10 @@ Two models are considered for these web views:
    Examples of this approach are [Android Custom Tabs](https://developer.chrome.com/docs/android/custom-tabs/) and
    [SFSafariViewController](https://developer.apple.com/documentation/safariservices/sfsafariviewcontroller).
 
-In all cases, IPA provides the greatest benefit if there is a single system-wide (or user-wide) store of match keys.
-To facilitate this, support for storing and managing match keys at the level of the operating system provides the greatest utility.
+In all cases, IPA provides the greatest measurement utility if there is a single system-wide (or user-wide) store of match keys.
+To facilitate this, support for storing and managing match keys might be provided at the level of the operating system.
 A system-wide utility will ensure that attribution can work across different apps, including browsing.
-Without a system-wide store, attribution can still work, though it will be limited to impressions and conversions in the same app.
+Without a system-wide store, attribution is possible, though it will be limited to impressions and conversions that occur in the same app.
 
 
 ### Applications that can access web content
@@ -1957,30 +1957,30 @@ The same value cannot be used across different apps or sites, or the ciphertext 
 Integration of the IPA API at the system level therefore needs to segment any storage of _encrypted match keys_ based on the identity of the application that requests it, in addition to the site.
 
 Note that this is an imperfect model because activity on sites shown in a web view might be linkable to activity in browser or other apps.
-Many sites attempt to detect webviews and disable login, which can prevent more direct forms of linkability.
+Many sites attempt to detect webviews and disable login, which can prevent the most direct forms of linkability.
 However, some applications use embedded browsers to manage login and authorization of access to online services.
 Consequently, people can become accustomed to having to log in, despite that being a poor security practice, and in doing so create strong correlation between contexts.
 
-Aside from partitioning the storage of _encrypted match keys_ by app, no other adjustment is being considered.
-Sites can use match keys as usual.
-The app will be able to view or even change the encrypted match key, but the value will not reveal anything.
-This access might allow actions that could be seen to be malicious, such as:
+Aside from partitioning the storage of _encrypted match keys_ by the embedding app, no other adjustment is being considered.
+Sites visited within the web view can use match keys as usual.
+An embedding app will be able to view or even change the _encrypted match key_.
+The app cannot learn anything directly from doing so, but this access might allow actions that could be seen to be malicious, such as:
 
-* An app can violate user privacy by _encrypted match keys_ to different sites that allow those sites to link user activity.
+* The embedding app can violate user privacy by providing identical or otherwise linkable _encrypted match keys_ to different sites.
 
-* An app that captures an _encrypted match key_ from site content might be able to provide the value to helpers against the wishes of the site that is involved.
+* The embedding app that captures an _encrypted match key_ from site content might be able to submit the value in an IPA query against the wishes of the embedded site.
 
-* An app can provide sites with bogus _encrypted match keys_ or _encrypted match keys_ sourced from other contexts with a goal of spoiling attribution results.
+* The embedding app can provide sites with bogus _encrypted match keys_ or _encrypted match keys_ sourced from other contexts with a goal of spoiling attribution results.
 
-* An app might deny sites in the web view with access to the IPA APIs.
+* The embedding app might deny sites in the web view with access to the IPA APIs.
 
-* An app might misrepresent the identity of the site to the operating system, obtaining _encrypted match keys_ that are attributed to a site of its choice.
+* The embedding app might misrepresent the identity of the site to the operating system, obtaining _encrypted match keys_ that are attributed to a site of its choice.
 
-An app that behaves in this way is no different than operating an untrustworthy or malicious browser.
+An embedding app that behaves in this way is no different than operating an untrustworthy or malicious browser.
 For the most part, the risks are attributable to use of malicious software.
-However, The misrepresentation of site identity by an app allows the site to worsen privacy in a way that is unique to IPA.
+However, the misrepresentation of site identity by an app allows the site to increase privacy loss in a way that is unique to IPA.
 The _encrypted match keys_ obtained in this way can be used in IPA queries across multiple sites, with a separate [privacy budget](https://github.com/patcg-individual-drafts/ipa/blob/main/IPA-End-to-End.md#differential-privacy-budget-management) for each site.
-Because the _encrypted match keys_  are known to be for the same person, these queries release more information about that person than is intended.
+Because the _encrypted match keys_ are known to be for the same person, these queries release more information about that person than is intended.
 
 Limits on the number of _encrypted match keys_ is an option being explored for managing sensitivity capping in some designs for scaling the IPA MPC components.
 Having per-app _encrypted match keys_ works against that goal, as _encrypted match keys_ might come from many more apps than different devices.
@@ -1999,7 +1999,11 @@ Other than choosing a URL, the embedding application cannot access content, read
 This allows the browser to provide sites with the cookies that are used in the full browsing experience.
 
 In this situation, the _encrypted match key_ can be provided to the site as though this were part of a normal browsing session.
-The site could, if it were made aware of its state, share information with the application, but it would only do so if it chose to, just like in other IPA scenarios.
+A site could, if it is aware of being embedded in an app, share the _encrypted match keys_ it obtains with the application.
+This might be possible via side channels in the embedding context, which would allow for linkability between the app context and the browsing context.
+For example, the embedding app might provide the site with URL parameters that convey information from the app, which might include user identity;
+in the other direction, the site might use resource loading, script execution, or other side channels to pass signals to the app.
+
 
 # Thanks and Acknowledgements
 
