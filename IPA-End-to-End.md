@@ -18,6 +18,7 @@ This document provides an end-to-end overview of that protocol, focusing primari
   * [Definitions](#definitions)
     * [Parties Involved](#parties-involved)
     * [Other Key Terms](#other-key-terms)
+  * [User Benefit](#user-benefit)
   * [Attribution Measurement](#attribution-measurement)
     * [Gathering Events](#gathering-events)
     * [Types of Queries](#types-of-queries)
