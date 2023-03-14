@@ -85,6 +85,30 @@ There are a number of different parties that are involved with the protocol in o
 5. _**Attribution Constraint ID**_: An identifier, specified by the _report collector_, to denote if a given pair of _source_ and _trigger events_ can be attributed (beyond having the same _match key_.)
 
 
+## User Benefit
+
+This API provides users with no direct benefit.
+The purpose of this API is to provide support for measuring advertising.
+Consequently, the only advantages to users are indirect.
+By enabling cross-site [attribution](#attribution-measurement), the API provides support for a critical advertising use case.
+
+In turn, advertising provides material support for web sites and applications, allowing businesses to provide content that is accessible to many users without requiring individual payment.
+
+Advertising can be an effective way of funding online content and services that does not have to rely on users paying for access.
+Supporting advertising in this way can make that access more equitable for users.
+Advertising without any means of measuring its effectiveness is far more wasteful than advertising that can be measured.
+By providing those that use advertising with a means of measuring its effect, advertising is better able to support sites.
+
+By providing an effective attribution solution in _user agents_, it is no longer necessary to use [tracking](https://www.w3.org/2001/tag/doc/unsanctioned-tracking/) to perform attribution.
+This will allow some advertising businesses to migrate away from tracking, which might benefit affected users.
+
+Of course, we cannot ignore the fact that tracking provides businesses with other benefits, including more flexible attribution.
+So there is no expectation that the introduction of a privacy-preserving attribution system will cause all tracking to immediately cease.
+
+There are some risks to users that IPA seeks to minimize through a range of measures, including technical safeguards and policy controls.
+The bulk of this document is dedicated to describing how attribution can be performed without revealing personally-identifiable information.
+
+
 ## Attribution Measurement
 
 Attribution measurement is a basic measurement approach used in online digital advertising. For a given conversion event (e.g., a purchase), we aim to attribute that conversion to an ad impression (if one exists.) We generalize into _source events_ (i.e., an ad impression) and _trigger events_ (i.e., a purchase.) _Source events_ happen on a _source website/app_, and _trigger events_ happen on a _trigger website/app_. In order to attribute, a _source event_ must occur before the _trigger event_ and must be from the same individual. In the event that a single query contains _trigger events_ from multiple _trigger websites/apps_, we must also constrain the attribution to only attribute _trigger events_ to _source events_ from relevant campaigns.
