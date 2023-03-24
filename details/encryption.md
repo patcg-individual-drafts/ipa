@@ -16,7 +16,7 @@ required in some cases, such as between helpers.
 Formally, this HTTPS only applies to those places where specifying
 interoperability requirements are specified, which is:
 
-* Between a record collector and the helper party network.
+* Between a report collector and the helper party network.
 
 * Between helpers in a helper party network.
 
@@ -158,15 +158,7 @@ composed from:
 1. The fixed string "private-attribution", encoded in ASCII, terminated with a
    single zero-valued byte.
 
-2. The [ASCII serialization of the match key provider
-   origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
-   terminated with a single zero-valued byte.
-
-3. The [ASCII serialization of the helper party
-   origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
-   terminated with a single zero-valued byte.
-
-4. The [ASCII serialization of the registrable domain for the current
+2. The [ASCII serialization of the registrable domain for the current
    site](https://url.spec.whatwg.org/#host-registrable-domain) encoded in ASCII
    as a period-separated sequence of
    [A-](https://datatracker.ietf.org/doc/html/rfc5890#section-2.3.2.1) or
@@ -174,25 +166,38 @@ composed from:
    labels (that is, the ASCII version of a domain name), terminated with a
    single zero-valued byte.
 
+3. The [ASCII serialization of the match key provider
+   origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
+   terminated with a single zero-valued byte.
+
+4. The [ASCII serialization of the helper party
+   origin](https://datatracker.ietf.org/doc/html/rfc6454#section-6.2),
+   terminated with a single zero-valued byte.
+
 5. The single-byte key identifier from the key configuration for the helper
    party.
 
 6. The current epoch, encoded as an two-byte integer in network byte order.
 
+7. A single byte that indicates the event type, set to either 0 (for a source
+   event) or 1 (for a trigger event).
+
 This produces the following process in pseudocode:
 
 ```python
-def ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch):
+def ipa_info(site_registrable_domain, mkp_origin, helper_origin,
+             key_id, epoch, event_type):
     return concat(encode_str("private-attribution"),
+              encode(0, 1),
+              ascii_origin(site_registrable_domain),
               encode(0, 1),
               ascii_origin(mkp_origin),
               encode(0, 1),
               ascii_origin(helper_origin),
               encode(0, 1),
-              ascii_origin(site_registrable_domain),
-              encode(0, 1),
               encode(key_id, 1),
-              encode(epoch, 2))
+              encode(epoch, 2),
+              encode(event_type, 1))
 ```
 
 ### Encryption
@@ -207,7 +212,8 @@ key to produce the message for that helper.
 This process is applied for each helper, as follows:
 
 ```python
-info = ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch)
+info = ipa_info(site_registrable_domain, mkp_origin, helper_origin,
+                key_id, epoch, event_type)
 enc, sctxt = SetupBaseS(pkH, info)
 ct = sctxt.Seal("", concat(mk[i], mk[i+1]))
 enc_mk = concat(enc, ct)
@@ -239,7 +245,8 @@ the secret key, the encapsulation key, and the same `info` string.
 
 ```python
 enc, ct = parse(enc_mk)
-info = ipa_info(mkp_origin, helper_origin, site_origin, key_id, epoch)
+info = ipa_info(site_registrable_domain, mkp_origin, helper_origin,
+                key_id, epoch, event_type)
 rctxt = SetupBaseR(enc, skR, info)
 request, error = rctxt.Open("", ct)
 ```
@@ -268,24 +275,38 @@ typically 16-20 bytes long in practice.
 
 # Query Encryption
 
-A record collector submits queries to a chosen helper party.  This uses HTTPS,
-but this is not sufficient because the content of a query is secret shares that
-are intended for each of three helper parties.
+A report collector submits queries to a chosen helper party.  This uses HTTPS,
+which protects information from network adversaries.
 
-Each query requires that the record collector provide multiple items or records.
-Each record is split into three components, each that is sent to one of the
-three helper parties.  Each component includes one part of the encrypted match
-key (which does not necessarily require further encryption), information
-necessary for decryption (the origin of the site where this match key was
-requested, the key identifier used in match key encryption and the epoch), and
-supplementary information provided by the record collector: event type (source
-or trigger), the trigger value, the breakdown key, and attribution constraint
-ID.
+If data for all three helpers were submitted to the chosen helper, additional
+protection would be required to protect the information intended for other
+helper parties in the network.
 
-Of these fields, the current design only permits the decryption information to
-be directly exposed; all other values are secret shared.  Decryption information
-is also likely to be stable over time, so using a form of run-length encoding
-for these values should make the overall encoding more efficient.
+Each record contains data for each of the three helper parties.  Each component
+includes:
+
+* one part of the encrypted match key (which does not necessarily require
+  further encryption),
+
+* information necessary for decryption:
+  * the registrable domain of the site where this match key was requested,
+  * the event type (source or trigger),
+  * the epoch, and
+  * the key identifier for the helper party public key that was used.
+
+  Note that, other than the key identifier, the same data is sent to all three
+  helper parties.
+
+* the query information provided by the report collector:
+  * the trigger value or the breakdown key,
+  * attribution constraint ID, and
+  * a timestamp.
+
+  This last group of fields is secret shared.
+
+The information used in decryption is also likely to be stable over time and
+shared between many records, so using a form of run-length encoding for these
+values should make the overall encoding more efficient.
 
 
 ## Query Submission Options
@@ -293,19 +314,25 @@ for these values should make the overall encoding more efficient.
 It is necessary to separate the process of creating a query from the process of
 uploading records for that query.
 
-The query creation process is not particularly relevant to this discussion.  We
-shall assume that the record collector creates a query somehow.  We assume that
-there is some entity (or set of entities), likely one of the helper parties,
-that is authorized to create a query and able to coordinate the process.
+The query creation process is not particularly relevant to this discussion.  How
+a report collector creates a query willl be detailed in another note.  We assume
+that there is some entity (or set of entities), likely one of the helper
+parties, that is authorized to create a query and able to coordinate the
+process.
 
 At the highest level, submitting data for a query can follow two basic patterns:
 
 1. Query creation produces a record submission endpoint at each of the involved
-   helpers.  The record collector submits records to each of the helper parties
+   helpers.  The report collector submits records to each of the helper parties
    separately.  This approach is relatively simple as it can rely on the
    protections offered by TLS to ensure that record data is only visible to the
    correct helper party.  However, it requires that helpers all expose a public
    endpoint capable of accepting data for active queries.
+
+   There is also a tiny amount of data that is repeated to all three helper
+   parties (event type, epoch, and site).  These values are repeated often, so
+   we assume that we can design a compression scheme that will eliminate most of
+   this overhead.
 
 2. Record submission all flows through a single entity, which might be a helper
    party.  This might allow record submission to be coupled to query creation,
@@ -313,8 +340,8 @@ At the highest level, submitting data for a query can follow two basic patterns:
    (like the [PPM leader
    role](https://dt.ietf.org/doc/html/draft-ietf-ppm-dap#name-system-architecture)).
    However, it means that TLS protection is not sufficient.  Data that is
-   destined for helper parties needs to be encrypted so that the receiving
-   entity is unable to see it.
+   destined for helper parties needs an additional layer of encryption so that
+   the receiving entity is unable to see it.
 
 We originally intended to adopt the latter model.  Having a single point of
 contact allows for an asymmetric deployment of helper parties, where some helper
@@ -327,16 +354,19 @@ could be delivered sequentially or interleaved.
 
 Note that any architectural decisions might be distinct from business
 arrangements.  A single point of contact might be desirable for things like
-simplifying billing interactions.  This could be provided with either model.
+simplifying billing interactions.  The query creation process should provide
+report collectors with a single interface for creating queries.  This can also
+provide a single interface for retrieving results.
 
 
-### Interleaving
+### Interleaving Challenges
 
 Fully sequential delivery is likely to produce some difficulties for helper
 processing, because no multi-party computation can occur until all helper
 parties have their shares.  A sequential upload delays processing until more
 than two thirds of the records are uploaded.  For a large dataset, that is
-undesirable.
+undesirable, especially when large amounts of input needs to be retained at the
+first help until other helpers start to receive data.
 
 The question then becomes how to best interleave records.  Interleaving at the
 transport layer, by submitting requests as separate flows, provides strong
@@ -352,14 +382,16 @@ records thus far are shared with all helpers, which can validate that both their
 own and their peers have inputs that hash correctly.
 
 Replicated secret sharing offers a simpler option: helpers can also calculate a
-running hash of shares and periodically compare that with their peers.
+running hash of shares and periodically compare that with their peers.  Our MPC
+protocols use a MAC for validating certain actions (like the multiplication or
+reveal subprotocols), so we might even reuse those protocols for input
+validation.
 
 Interleaving of records for different helper parties in the same stream ensures
 that data is more tightly synchronized and might offer less risk of corruption,
-but it complicates the data format considerably.  There are also very few
-opportunities for size savings.  The only datum that might be shared between the
-parallel flows of data to each helper party is the epoch, which is small and
-changes only infrequently.
+but it complicates the data format considerably.  There are also only limited
+opportunities for size savings through sharing data, and those savings are lost
+when the data is forwarded to other helper parties.
 
 
 ## Proposal
@@ -367,19 +399,19 @@ changes only infrequently.
 This proposes that the protocol use a separate flow of data for each helper
 party.
 
-The simplest design has data sent directly from the record collector to each
+The simplest design has data sent directly from the report collector to each
 helper party.  This requires a three stage query process:
 
 1. In the preparation stage, a query is created.  This first stage establishes
-   parameters for the query and provides the record collector with an endpoint
+   parameters for the query and provides the report collector with endpoints
    where data can be submitted to each helper party.
 
-2. In the upload stage, the record collector concurrently submits data to all of
+2. In the upload stage, the report collector concurrently submits data to all of
    the helper parties.  The helper parties then execute the MPC protocol, parts
    of which can commence as soon as the first data becomes available.
 
 3. In the final stage, shares of the results are published by each helper and
-   retrieved by the record collector.  The record collector combines these to
+   retrieved by the report collector.  The report collector combines these to
    obtain the results.
 
 This system only depends on the protections afforded by TLS.
@@ -408,4 +440,5 @@ though [RFC 8291](https://datatracker.ietf.org/doc/html/rfc8291) does, a more
 complete design is still needed.
 
 A more modern design based on HPKE might be preferable.  Details for this
-additional encryption can be arranged later.
+additional encryption can be arranged later if this is found to be the better
+architectural choice.
