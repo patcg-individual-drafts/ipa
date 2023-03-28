@@ -5,6 +5,8 @@ IPA is a [Private Measurement proposal](https://github.com/patcg/private-measure
 ## Latest Protocol Draft
 [IPA End to End](IPA-End-to-End.md) is our latest version of the proposal.
 
+We also have a [formal analysis posted on ePrint.](https://eprint.iacr.org/2023/437)
+
 
 
 ## Implementation
