@@ -10,7 +10,7 @@ We also have a [formal analysis posted on ePrint.](https://eprint.iacr.org/2023/
 
 
 ## Implementation
-We are actively [prototyping an implementation](https://github.com/private-attribution/).
+We are actively [prototyping an implementation](https://github.com/private-attribution/ipa).
 
 ## Get Involved
 
