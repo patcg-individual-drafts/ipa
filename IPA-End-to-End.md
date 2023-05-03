@@ -8,6 +8,8 @@ Originally posted on 2022/07/28.
 
 Interoperable Private Attribution (IPA) is a proposal for a new web platform API for advertising attribution. It does so by proposing two new user-agent APIs: 1) a `set_match_key()` API, and 2) a `get_encrypted_match_key()` API. The _match keys_ which leave the _user agent_ are always encrypted towards a _privacy preserving measurement_ system, i.e., a distributed multi-party computation (MPC) operated by _helper parties_ who are only trusted to not collude. The _helper parties_ that operate this privacy preserving measurement system participate in a protocol to produce an aggregate and differentially private attribution result. Our goal is that a web platform which implements this API only needs to trust the _helper parties_ to not collude in order to have assurance that the API does not enable cross-context tracking. (The PATCG is working on a threat model, and our goal is that IPA will satisfy that model.)
 
+**Update to `set_match_key`** (May 3, 2023):  We discovered a [privacy attack](https://github.com/patcg-individual-drafts/ipa/issues/57) against the set `set_match_key()` API that could be carried out by a malicious match key provider. The attack does not apply to the case when the device generates a random match key and we propose focusing on that on-device match key version as an MVP.  It remains an open research question to support setting the match key by a match key provider.
+
 This document provides an end-to-end overview of that protocol, focusing primarily on the MPC performed by the _helper parties_. For exploring an MPC based approach, we have made several design choices in favor of simplicity. This is especially true for our approach to DP as well as the focus on _last touch attribution_. We intend to improve the functionality of IPA by adding other approaches to DP and attribution as IPA progresses.
 
 ## Table of Contents
@@ -227,9 +229,15 @@ The mechanism for making such a commitment, and making sure that it’s visible 
 
 ## Client Side: Setting the _match key_
 
-The first API proposed in IPA, `set_match_key()`, allows for the setting of a write-only `match_key` in the _user agent_ by _match key providers_. _Match key providers_ can be any _website/app_, but provide the most value when they are parties with large logged-in user bases, particularly across devices. As a user logs-in to a _match key provider_ service with different _user agents_ (across different browsers and apps, potentially on different devices) the _match key provider_ will set the same _match key_ for that user on each _user agent_.
+For IPA we assume there will be unique match keys for each person that can be processed under encryption in the MPC. We are currently considering two main methods for setting match keys:
+1. Using the `set_match_key()` API
+2. Generating it randomly on the device
 
-The _match key_ cannot be read directly; it is only used to produce secret shares encrypted towards a specific _helper party network_.
+The `set_match_key()` API allows for the setting of a write-only `match_key` in the _user agent_ by _match key providers_. _Match key providers_ are _websites/app_ that are approved by the user agent vendor to set match keys. They would provide the most value when they are parties with large logged-in user bases, particularly across devices. As a user logs-in to a _match key provider_ service with different _user agents_ (across different browsers and apps, potentially on different devices) the _match key provider_ will set the same _match key_ for that user on each _user agent_.  The reason we need match key providers to be approved by the user agent vendor is that in the current construction the match key providers would need to be trusted not to be malicious.
+
+The second method (currently recommended for the initial version as most secure) is to have the device generate a random match key.
+
+In either case, the _match key_ cannot be read directly; it is only used to produce secret shares encrypted towards a specific _helper party network_.
 
 
 ## Client Side: Getting the encrypted _match key_ report
