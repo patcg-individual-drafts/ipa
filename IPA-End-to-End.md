@@ -57,6 +57,9 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Privacy Preserving Mean and Covariance Estimation](#privacy-preserving-mean-and-covariance-estimation)
   * [Transparency of Queries](#transparency-of-queries)
   * [Oblivious Algorithms](#oblivious-algorithms)
+  * [Web Views and Embedded Browsers](#web-views-and-embedded-browsers)
+    * [Applications that can access web content](#applications-that-can-access-web-content)
+    * [Applications that cannot access web content](#applications-that-cannot-access-web-content)
 * [Thanks and Acknowledgements](#thanks-and-acknowledgements)
 
 ## Definitions
@@ -1959,6 +1962,84 @@ Oblivious algorithms are algorithms with data access patterns that do not depend
 An example of an oblivious algorithm is the bitonic sorting algorithm [[1]](https://en.wikipedia.org/wiki/Bitonic_sorter). Another advantage of oblivious algorithms is that in many cases they can be very efficiently computed in a secure MPC. Instead of running one large MPC protocol with a very large input, oblivious algorithms allow us to massively parallelize the algorithm, with each thread performing the same type of processing on tiny slices of the input data.
 
 The last-touch attribution algorithm described above is oblivious. The algorithm can be parallelized into a large number of small computations that only compare two rows at a time. The pairs of rows which will be compared are always the same, regardless of the values of the input. As such, the _helper party_ learns nothing about the input, and can easily parallelize all of these comparisons.
+
+
+## Web Views and Embedded Browsers
+
+On some operating systems, browser components can be integrated into applications in a number of ways.
+Two models are considered for these web views:
+
+1. Where the embedded browser component permits the application to access (or modify) content.
+   Examples of these include [Windows WebView2](https://learn.microsoft.com/en-us/windows/apps/design/controls/web-view),
+   [iOS WKWebView](https://developer.apple.com/documentation/webkit/wkwebview), or
+   [Android WebView](https://developer.android.com/develop/ui/views/layout/webapps).
+
+2. Where the operation of the browser component is not accessible to the application.
+   Examples of this approach are [Android Custom Tabs](https://developer.chrome.com/docs/android/custom-tabs/) and
+   [SFSafariViewController](https://developer.apple.com/documentation/safariservices/sfsafariviewcontroller).
+
+In all cases, IPA provides the greatest measurement utility if there is a single system-wide (or user-wide) store of match keys.
+To facilitate this, support for storing and managing match keys might be provided at the level of the operating system.
+A system-wide utility will ensure that attribution can work across different apps, including browsing.
+Without a system-wide store, attribution is possible, though it will be limited to impressions and conversions that occur in the same app.
+
+
+### Applications that can access web content
+
+If the embedded browser makes content accessible to the application, then the application is effectively acting as an independent browser.
+An application therefore needs distinct storage from the regular browser so that one application cannot access private information hosted by another application or browser.
+
+When IPA integrates into this sort of environment, the `getEncryptedMatchKey()` API needs to return an encryption of the match key that is specific to the combination of application and site.
+The same value cannot be used across different apps or sites, or the ciphertext that is provided might link activity across contexts.
+Integration of the IPA API at the system level therefore needs to segment any storage of _encrypted match keys_ based on the identity of the application that requests it, in addition to the site.
+
+Note that this is an imperfect model because activity on sites shown in a web view might be linkable to activity in browser or other apps.
+Many sites attempt to detect webviews and disable login, which can prevent the most direct forms of linkability.
+However, some applications use embedded browsers to manage login and authorization of access to online services.
+Consequently, people can become accustomed to having to log in, despite that being a poor security practice, and in doing so create strong correlation between contexts.
+
+Aside from partitioning the storage of _encrypted match keys_ by the embedding app, no other adjustment is being considered.
+Sites visited within the web view can use match keys as usual.
+An embedding app will be able to view or even change the _encrypted match key_.
+The app cannot learn anything directly from doing so, but this access might allow actions that could be seen to be malicious, such as:
+
+* The embedding app can violate user privacy by providing identical or otherwise linkable _encrypted match keys_ to different sites.
+
+* The embedding app that captures an _encrypted match key_ from site content might be able to submit the value in an IPA query against the wishes of the embedded site.
+
+* The embedding app can provide sites with bogus _encrypted match keys_ or _encrypted match keys_ sourced from other contexts with a goal of spoiling attribution results.
+
+* The embedding app might deny sites in the web view with access to the IPA APIs.
+
+* The embedding app might misrepresent the identity of the site to the operating system, obtaining _encrypted match keys_ that are attributed to a site of its choice.
+
+An embedding app that behaves in this way is no different than operating an untrustworthy or malicious browser.
+For the most part, the risks are attributable to use of malicious software.
+However, the misrepresentation of site identity by an app allows the site to increase privacy loss in a way that is unique to IPA.
+The _encrypted match keys_ obtained in this way can be used in IPA queries across multiple sites, with a separate [privacy budget](https://github.com/patcg-individual-drafts/ipa/blob/main/IPA-End-to-End.md#differential-privacy-budget-management) for each site.
+Because the _encrypted match keys_ are known to be for the same person, these queries release more information about that person than is intended.
+
+Limits on the number of _encrypted match keys_ is an option being explored for managing sensitivity capping in some designs for scaling the IPA MPC components.
+Having per-app _encrypted match keys_ works against that goal, as _encrypted match keys_ might come from many more apps than different devices.
+
+A system might offer control over how apps participate in the API, including per-app authorization of access to the IPA APIs.
+Apps that are denied access to the API can receive encryptions of a randomized match key, which might be stable (and so enable attribution within the app) or randomized (preventing all use of attribution).
+
+Further investigation will be needed to better understand the implications of making IPA available to web views that are accessible to apps.
+
+
+### Applications that cannot access web content
+
+The use of custom tabs allows an application to use a browser, but without gaining access to the content of sites, either to view it or modify it.
+It is possible to treat this form of embedding as an extension of another browser, rather than being considered part of the application.
+Other than choosing a URL, the embedding application cannot access content, read cookies, or otherwise affect how the browser operates.
+This allows the browser to provide sites with the cookies that are used in the full browsing experience.
+
+In this situation, the _encrypted match key_ can be provided to the site as though this were part of a normal browsing session.
+A site could, if it is aware of being embedded in an app, share the _encrypted match keys_ it obtains with the application.
+This might be possible via side channels in the embedding context, which would allow for linkability between the app context and the browsing context.
+For example, the embedding app might provide the site with URL parameters that convey information from the app, which might include user identity;
+in the other direction, the site might use resource loading, script execution, or other side channels to pass signals to the app.
 
 
 # Thanks and Acknowledgements
