@@ -46,6 +46,13 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Oblivious Last Touch Attribution](#oblivious-last-touch-attribution)
     * [User Level Sensitivity Capping](#user-level-sensitivity-capping)
     * [Computing the Aggregates](#computing-the-aggregates)
+* [Event Labeling Queries witth per matchkey DP bound](#event-labeling-queries-with-per-matchkey-dp-bound)
+  * [Source site differences](#source-site-differences)
+  * [Input/Output Structure](#inputoutput-structure)
+  * [Query Stages for Event Labeling Queries](#query-stages-for-event-labeling-queries)
+  * [Example](#example)
+  * [Per matchkey DP bound](#per-matchkey-dp-bound)
+  * [Budgeting for both aggregation and event labeling queries](#budgeting-for-both-aggregation-and-event-labeling-queries)
 * [Technical Discussion and Remarks](#technical-discussion-and-remarks)
   * [Optimizations](#optimizations)
     * [Two Party Secret Sharing](#two-party-secret-sharing)
@@ -2114,19 +2121,17 @@ Consider the following example where we perform last touch attribution.
 
 
 
-## Per user DP bound
+## Per matchkey DP bound
 
-In order to bound the amount of information released about a user (matchkey) per epoch we needed to do two things:
+In order to bound the amount of information released about a matchkey (which is our best approximation of a user in the system) per epoch we needed to do two things:
 
-
-
-1. Reduce the per epoch budget for each query
-2. Within each query ensure that all the labeled events released for a user don’t exceed that particular query’s budget.  We can do this by letting the probability for each event’s flip be derived from an epsilon of (query epsilon / number of events labeled per user).
+1. Deduct from the per epoch budget for each query
+2. Within each query ensure that all the labeled events released for a matchkey don’t exceed that particular query’s budget.  We can do this by letting the probability for each event’s flip be derived from an epsilon of (query epsilon / number of events labeled per matchkey).
 
 A nice property is that we do not need to rate limit report creation on-device or limit replays of reports.
 
 
-## Simultaneous budgeting for both aggregation queries and event labeling queries
+## Budgeting for both aggregation and event labeling queries
 
 As Charlie pointed out in his [presentation](https://docs.google.com/presentation/d/1Cc8_S46m4-z8o_dM4egYSSEyHxc-bGinSw_Say_93uA/edit#slide=id.g21ee318a45e_0_52), it would be nice to have the flexibility to choose between composition using labeled events or using central DP as the utility may vary depending on the number of queries and use case within the same epsilon budget.
 
