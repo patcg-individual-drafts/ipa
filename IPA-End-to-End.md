@@ -1907,6 +1907,234 @@ After computing the aggregates within each category, the _helper parties_ P<sub>
 The noise is generated within an MPC protocol. This could be done by having each party sample noise independently then add it to the secret shared aggregated value. This is a simple approach but has the drawback that the privacy guarantees in case of a corrupted MPC party are lower since the corrupted party will know their share of the noise and deduct it from the aggregated value. A better but more complicated approach is to run a secure coin tossing protocol between parties P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> where the coins are private and then use these coins to run a noise sampling algorithm within MPC to generate secret shares of the DP noise. This noise is then added to the secret shared aggregated value. Using the second approach, a malicious party cannot manipulate the protocol to see a noisy aggregated value with less noise. Hence, the privacy guarantees match the amount of DP noise generated and added as specified in the protocol description even when one party is malicious.
 
 
+
+
+# Event Labeling Queries with per matchkey DP bound
+
+There has been considerable interest in supporting event level outputs in IPA ([IPA issue 60](https://github.com/patcg-individual-drafts/ipa/issues/60), [PATCG issue 41](https://github.com/patcg/docs-and-reports/issues/41)).  This was discussed at the May 2023 PATCG meeting where the [consensus ](https://github.com/patcg/docs-and-reports/pull/43)was we could support this so long as we can enforce a per user bound on the information released.
+
+Here we outline how an Event Labeling Query that labels events with noisy labels can be done in a way that lets us maintain a per matchkey DP bound.  We also consider how these new queries can be compatible with an IPA system that flexibly supports either aggregation queries or event labeling queries.
+
+
+## Source site differences
+
+There are two settings for a source site
+
+
+
+1. A source site that knows who it is showing ads to and can tie together source reports belonging to the same person. This would be the case of a publisher website with logged-in users.
+2. A source site, such as an ad-network, that shows ads across many different websites and doesn’t necessarily know when it is showing an ad to the same person.
+
+We design an Event Labeling Query that can support both settings, though in the first setting the noise level per event may be more predictable and consistent since the source site can put in the same number of source reports per matchkey.   To help support the second setting, we can output some Reach & Frequency statistics to let the Report Collector learn about how many actual users were present in their set of source reports. This will inform them about the expected noise level that was added to the event labels.
+
+
+## Input/Output Structure
+
+In an Event Labeling Query, a source site submits a source fan-out query where the source reports contain the encrypted matchkey and timestamp as well as a source_id, which is a unique index to identify this report back to the source site’s user.  The source site gets as output a row for every source report submitted with each output consisting of the source_id and a label. The label is either 0 or 1.
+
+
+![Inputs and Outputs of Event Labeling Queries](ipa-end-to-end-images/image2.png "image_tooltip")
+
+
+
+
+**Query Inputs:**
+
+
+
+* Source reports (is_trigger, matchkey, timestamp, source_id)
+* Trigger reports (is_trigger, matchkey, timestamp)
+* DP budget for this query: query_epsilon
+
+**Query Output:**
+
+
+
+* A row for every source report:  (source_id, label) where label in {0,1}
+
+In each query we will count the number of source reports per matchkey and use this to scale the noise for labeling that user’s events, so as to maintain a constant per user information release.
+
+
+## Query Stages for Event Labeling Queries
+
+The stages of the query are as follows where the first two are the same as in regular IPA aggregation queries:
+
+* Report Collector can presort by timestamp
+* Sort by matchkey in the MPC
+* Attribution
+    * Source rows will be labeled as attributed, 1, or not attributed, 0, by some attribution logic that attributes trigger events to earlier source events.  It seems we should be able to support any attribution logic here.
+* Label Flipping
+    * First we count the number of source reports that share the same matchkey, call this matchkey_source_count.
+    * For every source row flip it attribution label with probability p, where p is derived from (query_epsilon / matchkey_source_count )
+* Output (source_id, label) to the Report Collector
+
+
+## Example
+
+Consider the following example where we perform last touch attribution.
+
+
+<table>
+  <tr>
+   <td><strong>Timestamp </strong>
+   </td>
+   <td><strong>Matchkey </strong>
+   </td>
+   <td><strong>source_id</strong>
+   </td>
+   <td><strong>is_trigger</strong>
+   </td>
+   <td><strong>Label </strong>
+   </td>
+   <td><strong>Noisy label </strong>
+   </td>
+  </tr>
+  <tr>
+   <td>110
+   </td>
+   <td>AAA
+   </td>
+   <td>58934
+   </td>
+   <td>0
+   </td>
+   <td>1
+   </td>
+   <td>1 (to be flipped with prob derived from query_epsilon / 1)
+   </td>
+  </tr>
+  <tr>
+   <td>230
+   </td>
+   <td>AAA
+   </td>
+   <td>NA
+   </td>
+   <td>1
+   </td>
+   <td>
+   </td>
+   <td>
+   </td>
+  </tr>
+  <tr>
+   <td>002
+   </td>
+   <td>CCC
+   </td>
+   <td>67654
+   </td>
+   <td>0
+   </td>
+   <td>0
+   </td>
+   <td>0 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>030
+   </td>
+   <td>CCC
+   </td>
+   <td>76643
+   </td>
+   <td>0
+   </td>
+   <td>0
+   </td>
+   <td>0 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>485
+   </td>
+   <td>CCC
+   </td>
+   <td>66322
+   </td>
+   <td>0
+   </td>
+   <td>1
+   </td>
+   <td>1 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>672
+   </td>
+   <td>CCC
+   </td>
+   <td>NA
+   </td>
+   <td>1
+   </td>
+   <td>
+   </td>
+   <td>
+   </td>
+  </tr>
+</table>
+
+
+**Output to Report Collector:**
+
+
+<table>
+  <tr>
+   <td><strong>source_id</strong>
+   </td>
+   <td><strong>Noisy label </strong>
+   </td>
+  </tr>
+  <tr>
+   <td>58934
+   </td>
+   <td>1
+   </td>
+  </tr>
+  <tr>
+   <td>67654
+   </td>
+   <td>1 (flipped)
+   </td>
+  </tr>
+  <tr>
+   <td>76643
+   </td>
+   <td>0
+   </td>
+  </tr>
+  <tr>
+   <td>66322
+   </td>
+   <td>1
+   </td>
+  </tr>
+</table>
+
+
+
+## Per user DP bound
+
+In order to bound the amount of information released about a user (matchkey) per epoch we needed to do two things:
+
+
+
+1. Reduce the per epoch budget for each query
+2. Within each query ensure that all the labeled events released for a user don’t exceed that particular query’s budget.  We can do this by letting the probability for each event’s flip be derived from an epsilon of (query epsilon / number of events labeled per user).
+
+A nice property is that we do not need to rate limit report creation on-device or limit replays of reports.
+
+
+## Simultaneous budgeting for both aggregation queries and event labeling queries
+
+As Charlie pointed out in his [presentation](https://docs.google.com/presentation/d/1Cc8_S46m4-z8o_dM4egYSSEyHxc-bGinSw_Say_93uA/edit#slide=id.g21ee318a45e_0_52), it would be nice to have the flexibility to choose between composition using labeled events or using central DP as the utility may vary depending on the number of queries and use case within the same epsilon budget.
+
+In particular, we would like the IPA system to support both aggregation queries and event labeling queries. It seems that the above construction enables this if both types of queries deduct from the same per epoch budget.
+
+Also the same encrypted match key returned by `get_encrypted_matchkey()` can be used for these Event Labeling Queries or for regular Aggregation Queries.  The report collector will just add different associated data to form the reports to be sent into the MPC.
+
+
 # Technical Discussion and Remarks
 
 
