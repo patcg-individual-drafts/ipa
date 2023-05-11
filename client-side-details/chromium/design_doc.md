@@ -23,7 +23,8 @@ Chromium Bug [1404067](https://bugs.chromium.org/p/chromium/issues/detail?id=140
 - settings: user settings page to control state of IPA
 - Devtools: Add tools for debugging IPA state.
 
-We are proposing two APIs `getEncryptedMatchKey` and `getHelperNetworks`. 
+## Exposed attribute
+We are proposing an attribute, privateAttribution on the DOM window which would implement two APIs `getEncryptedMatchKey` and `getHelperNetworks`. 
 
 ## getEncryptedMatchKey API
 This API allows retrieval of an encryption of secret-shares of the matchkey that was previously set. If not found, this API also generates a random value for the matchkey, and stores it.
