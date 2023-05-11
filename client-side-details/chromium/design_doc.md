@@ -66,7 +66,7 @@ enum PrivateAttributionEvent {
 // Retrieve an encryption of a secret-sharing of the match key that was
 // previously set. This encryption will be specific to the registrable domain
 // of the top-level schemeful site at the time when this function is invoked.
-Promise<PrivateAttributionEncryptedMatchKey> `getEncryptedMatchKey`(
+Promise<PrivateAttributionEncryptedMatchKey> getEncryptedMatchKey(
 
   // Origin of report collector who is collecting the events
   DOMString reportCollector,
@@ -149,6 +149,7 @@ Output: caller_site to find the encrypted shares for this user
 The browser first does some preprocessing needed to fetch appropriate matchkey shares for the current user.
 
 The preprocessing module would execute the following steps:
+![Preprocessing steps](images/preprocessing.png "image_tooltip")
 - Check if this API should be allowed to be accessed in the current setting. This API will not be available for any Android webviews. Here is some discussion about the challenges with webviews: [link](https://github.com/patcg-individual-drafts/ipa/pull/41). It will also be governed by the Permissions Policy. Specifically, this API won’t be available for iframes. We will return an error code in case the API is still somehow called under these conditions.
 - Check if the helper party network is on the list of approved helper party networks, the same list which is obtained when calling `getHelperNetworks`
 - Calculates current site
@@ -161,6 +162,7 @@ Output: 3 secret shares or, encrypted shares (3 AEAD encrypted blobs)
 
 This is an implementation for getting matchkey shares based on OS support and API disabled status. In the future, we envision an OS-level implementation which would return encrypted shares which could be used for the purpose of IPA. 
 
+![Generate share steps](images/generateshares.png "image_tooltip")
 
 - **API disabled**
 
@@ -195,6 +197,7 @@ Outputs: Encrypted shares (3 AEAD encrypted blobs)
 This function takes the unencrypted matchkey secret shares as an argument and returns back encrypted shares, which are bound to authenticated associated data.
 
 Here are the steps it takes.
+![Encrypt share steps](images/encryptmk.png "image_tooltip")
 
 - Assembles associated data i.e. report collector, event_type, caller_site and epoch
 - Calls `getHelperNetworks` API to get the public keys of the helper parties
@@ -206,6 +209,8 @@ Here are the steps it takes.
 ### Summary of overall implementation flow
 
 Now that we have detailed all different components needed for the API to work, here is the overall flow
+
+![Summary](images/summary.png "image_tooltip")
 
 - The browser does preprocessing to validate input and calculate appropriate inputs for the next phase.
 - The caller_site is then used to perform a lookup in the matchkeys_cache. If found, the 3 secret shares are used to invoke encrypt_matchkey
@@ -290,8 +295,8 @@ After computing the aggregated attribution data, the helpers ensure that it is d
 
 #### Resetting and clearing match key
 In future updates, user settings page will be provided which gives people the ability to 
-Disable the API as mentioned above.
-Reset their match keys
+- Disable the API as mentioned above.
+- Reset their match keys
 The cached match key shares will also be deleted when users delete site data for the associated top level site.
 
 Overall, the Chromium API does not introduce any new threats. You can also refer to this Security and Privacy Questionnaire for more details on other considerations.
