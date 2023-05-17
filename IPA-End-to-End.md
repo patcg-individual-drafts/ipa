@@ -1927,12 +1927,12 @@ Here we outline how an Event Labeling Query that labels events with noisy labels
 
 There are two settings for a source site
 
-
-
 1. A source site that knows who it is showing ads to and can tie together source reports belonging to the same person. This would be the case of a publisher website with logged-in users.
 2. A source site, such as an ad-network, that shows ads across many different websites and doesn’t necessarily know when it is showing an ad to the same person.
 
-We design an Event Labeling Query that can support both settings, though in the first setting the noise level per event may be more predictable and consistent since the source site can put in the same number of source reports per matchkey.   To help support the second setting, we can output some Reach & Frequency statistics to let the Report Collector learn about how many actual users were present in their set of source reports. This will inform them about the expected noise level that was added to the event labels.
+We design two different Event Labeling Queries that can support these settings.  In the first setting the source site can (with pretty high confidence) supply the same number of source reports per matchkey. The MPC will label all of the events scaling the noise by the number of reports per matchkey.
+
+In the second setting a Report Collector will not know in advance how many source reports are for the same matchkey. In this case the RC will specify a cap on the number of source events it wants labeled per matchkey.  This allows the noise for each of these events to be scaled by the cap and thus the noise level added will be known to the Report Collector which is useful in debiasing downstream uses of the data.   To help support the second setting, we can also output some Reach & Frequency statistics to let the Report Collector learn about how many actual users were present in their set of source reports. This will inform them about how many events exceeded the cap and we labeled as zeros before having the noise applied.
 
 
 ## Input/Output Structure
@@ -1952,6 +1952,7 @@ In an Event Labeling Query, a source site submits a source fan-out query where t
 * Source reports (is_trigger, matchkey, timestamp, source_id)
 * Trigger reports (is_trigger, matchkey, timestamp)
 * DP budget for this query: query_epsilon
+* Cap (optional; if no cap is supplied the noise will scale with the number of reports per matchkey)
 
 **Query Output:**
 
@@ -1970,15 +1971,19 @@ The stages of the query are as follows where the first two are the same as in re
 * Sort by matchkey in the MPC
 * Attribution
     * Source rows will be labeled as attributed, 1, or not attributed, 0, by some attribution logic that attributes trigger events to earlier source events.  It seems we should be able to support any attribution logic here.
-* Label Flipping
-    * First we count the number of source reports that share the same matchkey, call this matchkey_source_count.
-    * For every source row flip it attribution label with probability p, where p is derived from (query_epsilon / matchkey_source_count )
+* Label Flipping; we consider two methods
+    * No Cap Supplied:
+       * First we count the number of source reports that share the same matchkey, call this matchkey_source_count.
+       * For every source row with probability p we asign its label randomly from {0,1}, otherwise leave it unchanged.  The p is derived from (query_epsilon / matchkey_source_count ) as p = 2 ( 2 - 1 + e^(query_epsilon / matchkey_source_count ))
+    * Cap Supplied:
+       *  For source rows with the same matchkey asign the attributed label for as many rows up to the cap for a matchkey. If there are more than the cap number of source rows for a matchkey, the excess ones are labeled as 0s.
+       *  or every source row with probability p we asign its label randomly from {0,1}, otherwise leave it unchanged.  The p is derived from (query_epsilon / cap ) as p = 2 ( 2 - 1 + e^(query_epsilon / cap ))
 * Output (source_id, label) to the Report Collector
 
 
 ## Example
 
-Consider the following example where we perform last touch attribution.
+Consider the following example where we perform last touch attribution and cap the number of source events labeled per matchkey at 3.
 
 
 <table>
@@ -2007,7 +2012,7 @@ Consider the following example where we perform last touch attribution.
    </td>
    <td>1
    </td>
-   <td>1 (to be flipped with prob derived from query_epsilon / 1)
+   <td>1 (to be flipped with prob derived from query_epsilon / 3)
    </td>
   </tr>
   <tr>
@@ -2126,10 +2131,16 @@ Consider the following example where we perform last touch attribution.
 In order to bound the amount of information released about a matchkey (which is our best approximation of a user in the system) per epoch we needed to do two things:
 
 1. Deduct from the per epoch budget for each query
-2. Within each query ensure that all the labeled events released for a matchkey don’t exceed that particular query’s budget.  We can do this by letting the probability for each event’s flip be derived from an epsilon of (query epsilon / number of events labeled per matchkey).
+2. Within each query ensure that all the labeled events released for a matchkey don’t exceed that particular query’s budget.
+   * In the case without a cap, we do this by letting the probability for each event’s flip be derived from an epsilon of (query epsilon / number of events labeled per matchkey).
+    * In the case with a cap, we do this by capping the number of events labeled and letting the probability for each event’s flip be derived from an epsilon of (query epsilon / cap).
 
 A nice property is that we do not need to rate limit report creation on-device or limit replays of reports.
 
+### Proof for capping case
+Consider two databases D and D' that are adjacent. After rate-limiting to sensitivity, a users contribution will look like $(x_1, x_2, ... x_n)$ and $(x_1', x_2', ..., x_n')$ for n events, where the value at any $x_i$ is the label. After capping, these vectors will differ on at most $s$. If you consider an output of $(y_1, ..., y_n)$, then we have $$\frac{Pr[y_1,...,y_n | x'_1,...x'_n]}{Pr[y_1,...,y_n | x_1,...x_n]} = \prod_{i=1}^{n}{\frac{Pr[y_i | x'_i]}{Pr[y_i | x_i]}}
+=  \prod_{i \in differing\_rows}{\frac{Pr[y_i | x'_i]}{Pr[y_i | x_i]}}$$
+That is, we can analyze each of the $s$ differing columns independently, and if you can show that the mechanism on a single column is bounded by $e^\epsilon$ it implies the whole mechanism is $s \epsilon$-differentially private.  (This is with an add-remove notion of DP that will just strip conversions for a converting user or add fake conversions for a non-converting user. With a "replacement" notion of DP that merely modifies the conversion patterns for a user the rows will differ on $2s$ values and everything goes through with a factor of 2 in the bound.)
 
 ## Budgeting for both aggregation and event labeling queries
 
