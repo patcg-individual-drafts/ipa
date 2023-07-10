@@ -2,24 +2,13 @@
 # June 28, 2023 Virtual Meeting for PATCG/IPA
 
 ## Agenda
-
 To add an agenda item, please open Biweekly Meeting Agenda Request Issue on the IPA Proposal GitHub repo.
 
 One main agenda item
 * Rust code walk through https://github.com/patcg-individual-drafts/ipa/issues/76
 
 
-
-
-
-
-
-
-
 ## **Attendance**
-
-
-
 1. Benjamin Case (Meta)
 2. Alex Koshelev (Meta)
 4. Craig Wright (Google)
@@ -27,9 +16,6 @@ One main agenda item
 6. Andy Leiserso
 7. Andrew Pascoe (NextRoll)
 8. Nigel Gay (NTU)
-
-
-
 
 ## Minutes
 
