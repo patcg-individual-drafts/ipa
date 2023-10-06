@@ -35,10 +35,11 @@ $l_i(\theta, X^{(i)}, y^{(i)}) = -[y^{(i)} \log(p_i) + (1-y^{(i)})\log(1-p_i)]$.
 Here, we let $p_i = \sigma(\theta^TX^{(i)})$, where $\sigma(\cdot)$ denotes the sigmoid function. 
 - The gradient of $L$ with regard to $\theta$ is then given by \
 	$\nabla L(\theta)=(\frac{1}{N} \cdot \sum\limits_{i=1}^{N} \sigma(\theta^TX^{(i)}) X^{(i)}) - (\frac{1}{N} \cdot \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} )$.
-- In the absence of any computational or privacy constraints, the model  can be trained via full-batch gradient descent of the form:
+- In the absence of any computational or privacy constraints, the model  can be trained via full-batch gradient descent of the form, where here $\text{lr}$ is the learning rate.:
   1. initialize model vector $\theta$
   2. while not converged: \
   $\text{set } \theta = \theta - \text{lr} \cdot ((\frac{1}{N} \cdot \sum\limits_{i=1}^{N} \sigma(\theta^T X^{(i)}) X^{(i)} ) - \frac{1}{N} \cdot \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} ))$
+ 
   4. output $\theta$
 
 ### Privacy Properties of WALR: Label "Blindness"
