@@ -42,7 +42,7 @@ Here, we let $p_i = \sigma(\theta^TX^{(i)})$, where $\sigma(\cdot)$ denotes the 
 - In the absence of any computational or privacy constraints, the model  can be trained via full-batch gradient descent of the form, where here $\text{lr}$ is the learning rate:
   1. initialize model vector $\theta$
   2. while not converged: \
-  $\text{set } \theta = \theta - \text{lr} \cdot ((\frac{1}{N} \cdot \sum\limits_{i=1}^{N} \sigma(\theta^T X^{(i)}) X^{(i)} ) - \frac{1}{N} \cdot \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} ))$
+  $\text{set } \theta := \theta - \text{lr} \cdot ((\frac{1}{N} \cdot \sum\limits_{i=1}^{N} \sigma(\theta^T X^{(i)}) X^{(i)} ) - \frac{1}{N} \cdot \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} ))$
  
   4. output $\theta$
 
@@ -56,7 +56,7 @@ This means that iterative optimization algorithms like gradient descent only req
 
 In the context of model training and label privacy, this motivates viewing $\nabla L$ in the form \
 $\nabla L(\theta, \text{dot-product}) = (\frac{1}{N} \sum\limits_{i=1}^{N} \sigma(\theta^{T}X^{(i)}) X^{(i)}) - \text{dot-product} $,\
-where $\text{dot-product} = \frac{1}{N} \sum\limits_{i=1}^{N} y^{(i)} X^{(i)}$.\
+where $\text{dot-product} := \frac{1}{N} \sum\limits_{i=1}^{N} y^{(i)} X^{(i)}$.\
 In this perspective, gradient descent-based training algorithms that (re)-compute $\nabla L$ at every iteration requires no direct access to labels if we assume that a private measurement system can provide the pre-computed **dot-product** vector at training time.
 
 - **Question:** why is this quantity referred to as "dot-product"?\
@@ -66,7 +66,7 @@ is a linear combination of k-dimensional vectors, where k is the number of featu
 $X = (X^{(1)}, ..., X^{(N)}) \in [0, 1]^{N*k}$ and $y = (y^{(1)}, ..., y^{(N)})^T \in \\{0, 1\\}^N$ \
 denote the *(N \* k)*-dimensional feature *matrix* and *N*-dimensional label vector respectively,  then we have 
 
-$\text{dot-product} = \frac{1}{N} \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} = \frac{1}{N} \cdot X \cdot y$ ,\
+$\text{dot-product} := \frac{1}{N} \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} = \frac{1}{N} \cdot X \cdot y$ ,\
 which is a matrix-vector multiply. Thus every i'th coordinate of this sum is the dot product between the i'th row vector of $X^T$ and the label vector $y$. Here, every row vector of $X^T$ can be interpreted as the set of weights for the i'th feature across all *N* samples in the dataset. 
 
 Thus the **dot-product** vector can be interpreted as $k$ independent dot products between each row vector of $X^T$ and the label vector $y$ (hence its name), or equivalently as a matrix-vector multiply, respectively producing $k$ weighted sums.
@@ -83,7 +83,7 @@ Our privacy model assumes the private measurement system has access to training 
 
 In the presence of a private measurement system that computes the (non-private) **dot-product** vector, label-DP can be achieved via a single-occurrence output perturbation of the form:
 
-$\text{noisy-dot-product} = \text{dot-product} + \text{gaussian-noise}$,
+$\text{noisy-dot-product} := \text{dot-product} + \text{gaussian-noise}$,
 
 where $\text{gaussian-noise}$ is a vector of iid normal random variables with variance calibrated to the l2 label-sensitivity of **dot-product** (more details below).
 
@@ -113,7 +113,7 @@ It follows by the privacy guarantee of the Gaussian Mechanism that $\text{noisy-
 Any additional computations used to update $\text{noisy-} \nabla L(\theta)$  (as in a gradient descent procedure) will still be label-DP (with the same privacy parameters) due to the Post Processing Theorem of DP (see Dwork+11 text).
 
 - **Question:** is $\text{noisy-dot-product}$ efficiently computable?\
-**Answer:** Yes, computing this vector requires just one pass through the set of feature vectors, and $k$ random draws from a Gaussian distribution. 
+**Answer:** Yes, computing this vector requires just one pass through the set of feature vectors, and $k$ random draws from a Gaussian distribution. Assuming the private measurement system is MPC based, the division by `N` need not be computed within MPC, and can instead be performed by the API consumer. 
 
 ## WALR Trainer Implementation: "Hybrid" Minibatch GD
 
@@ -123,7 +123,7 @@ Recall that in the absence of practical computational constraints, this label-DP
 
 1. initialize model vector $\theta$
 2. while not converged:\
-$\text{set } \theta = \theta - lr \cdot ((\frac{1}{N} \cdot \sum\limits_{i=1}^{N} p_i X^{(i)} ) - \text{noisy-dot-product})$
+$\text{set } \theta := \theta - lr \cdot ((\frac{1}{N} \cdot \sum\limits_{i=1}^{N} p_i X^{(i)} ) - \text{noisy-dot-product})$
 3. output $\theta$
 
 As mentioned, we assume the vector $\text{noisy-dot-product}$ is computed once and supplied by the *private measurent system* at training time. However, in the pseudocode above, every iteration of the `while` loop requires computing the term $(\frac{1}{N} \cdot \sum\limits_{i=1}^{N} p_i X^{(i)} )$. 
@@ -132,21 +132,21 @@ Here, $N$ is the total number of samples in the training dataset, which could be
 To circumvent this computational issue, we use a simple **"hybrid"-minibatch gradient** computation that we describe here. 
 
 First, we define the terms $\text{LHS}$ and $\text{RHS}$ as\
-$\sum\text{LHS} = \sum\limits_{i=1}^{N} p_i X^{(i)}$\
-$\sum\text{RHS} = \sum\limits_{i=1}^{N} y^{(i)} X^{(i)}$
+$\sum\text{LHS} := \sum\limits_{i=1}^{N} p_i X^{(i)}$\
+$\sum\text{RHS} := \sum\limits_{i=1}^{N} y^{(i)} X^{(i)}$
 
 which means that we can express $\nabla L(\theta)$ and $\text{noisy-} \nabla L(\theta)$ in the form\
 $\nabla L(\theta) = (\frac{1}{N}) \cdot (\sum LHS) – (\frac{1}{N}) \cdot (\sum RHS)$\
 $\text{noisy-} \nabla L(\theta) = (\frac{1}{N}) \cdot (\sum LHS) – (\frac{1}{N}) \cdot (\sum RHS) - \text{gaussian-noise}$. 
 
 To avoid computing $\text{LHS}$ at every optimization step, we approximate this term using a minibatch of size $m$.  Specifically, at every gradient descent step, we sample a minibatch $M$ of size $m$, and we compute\
-$\text{mini-}\sum\text{LHS} = \sum\limits_{j=1}^{m} p_j X^{(j)}$,\
+$\text{mini-}\sum\text{LHS} := \sum\limits_{j=1}^{m} p_j X^{(j)}$,\
 where the sum is over every index $j$ in the current step's minibatch.
 
 Then the corresponding "hybrid" and "noisy-hybrid"-minibatch gradient steps become:
 
-$\text{hybrid-} \nabla L(\theta) = (\frac{1}{m}) \cdot (\text{mini-} \sum\text{LHS}) – (\frac{1}{N}) \cdot \text{RHS}$\
-$\text{noisy-hybrid-} \nabla L(\theta) = (\frac{1}{m}) \cdot (\text{mini-} \sum\text{LHS}) - (\frac{1}{N}) \cdot \text{RHS} – \text{gaussian-noise}$. 
+$\text{hybrid-} \nabla L(\theta) := (\frac{1}{m}) \cdot (\text{mini-} \sum\text{LHS}) – (\frac{1}{N}) \cdot \text{RHS}$\
+$\text{noisy-hybrid-} \nabla L(\theta) := (\frac{1}{m}) \cdot (\text{mini-} \sum\text{LHS}) - (\frac{1}{N}) \cdot \text{RHS} – \text{gaussian-noise}$. 
 
 - **Question:** *why is this referred to as a "hybrid" minibatch?*\
 **Answer:** The term "hybrid" is used to emphasize the fact that the left-hand term is an average over a minibatch of size $m \leq N$, while the right-hand term is an average over the entire set of $N$ samples.\
@@ -160,7 +160,7 @@ The final noisy-hybrid-minibatch gradient descent procedure for WALR model train
 1. initialize model vector $\theta$
 2. while not converged:\
 sample minibatch of size $m$, and\
-$\text{set } \theta = \theta - lr \cdot ( \text{noisy-hybrid-} \nabla L(\theta))\$
+$\text{set } \theta := \theta - lr \cdot ( \text{noisy-hybrid-} \nabla L(\theta))\$
 3. output $\theta$
 
 ## Acknowledgements
