@@ -1,5 +1,9 @@
 # Weighted Aggregate Logistic Regression
 
+### Authors:
+- Sen Yuan (yuansen@meta.com)
+- John Lazarsfeld (jlazarsfeld.github.io)
+
 ## Background
 One approach to calibrating predictions from differentially private aggregate data is to utilize a large number of breakdown buckets. This approach has been explored in the context of charting out the future of advertising in a post-cookie world: [Criteo Competition](https://competitions.codalab.org/competitions/31485).
 
@@ -28,8 +32,8 @@ $X^{(1)}, X^{(2)}, ... , X^{(N)}$, \
 and N binary labels \
 $y^{(1)}, y^{(2)}, ... , y^{(N)} \in \\{0, 1\\}$.
 - We want to train a logistic regression model $\theta \in R^k$.
-- We consider the loss function \
- $L(\theta, \\{ X^{(i)} \\}, \\{ y^{(i)} \\} )=\frac{1}{N} \cdot \sigma ( \sum\limits_{i=1}^{n}l_{i}(\theta,X^{(i)},y^{(i)})$ \
+- We consider the cost function that is the average loss across all examples \
+ $L(\theta, \\{ X^{(i)} \\}, \\{ y^{(i)} \\} )=\frac{1}{N} \cdot \sum\limits_{i=1}^{n}l_{i}(\theta,X^{(i)},y^{(i)})$ \
 where each $l_i$ is the cross entropy loss \
 $l_i(\theta, X^{(i)}, y^{(i)}) = -[y^{(i)} \log(p_i) + (1-y^{(i)})\log(1-p_i)]$. \
 Here, we let $p_i = \sigma(\theta^TX^{(i)})$, where $\sigma(\cdot)$ denotes the sigmoid function. 
@@ -62,7 +66,7 @@ is a linear combination of k-dimensional vectors, where k is the number of featu
 $X = (X^{(1)}, ..., X^{(N)}) \in [0, 1]^{N*k}$ and $y = (y^{(1)}, ..., y^{(N)})^T \in \\{0, 1\\}^N$ \
 denote the *(N \* k)*-dimensional feature *matrix* and *N*-dimensional label vector respectively,  then we have 
 
-$\text{dot-product} = \frac{1}{N} \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} = \frac{1}{N} \cdot Xy$ ,\
+$\text{dot-product} = \frac{1}{N} \sum\limits_{i=1}^{N} y^{(i)} X^{(i)} = \frac{1}{N} \cdot X \cdot y$ ,\
 which is a matrix-vector multiply. Thus every i'th coordinate of this sum is the dot product between the i'th row vector of $X^T$ and the label vector $y$. Here, every row vector of $X^T$ can be interpreted as the set of weights for the i'th feature across all *N* samples in the dataset. 
 
 Thus the **dot-product** vector can be interpreted as $k$ independent dot products between each row vector of $X^T$ and the label vector $y$ (hence its name), or equivalently as a matrix-vector multiply, respectively producing $k$ weighted sums.
