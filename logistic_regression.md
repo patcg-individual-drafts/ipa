@@ -77,9 +77,9 @@ Thus the **dot-product** vector can be interpreted as $k$ independent dot produc
 
 We can also ensure that the final model vector $\theta$ is *label-differentially private* by using a label-differentially-private approximation of **dot-product** in the $\nabla L$ computation. 
 
-Our privacy model assumes the private measurement system has access to training labels. Our definition of $(\epsilon, \delta)$-label differential privacy is the standard:
+Our privacy model assumes the private measurement system has access to training labels.
 
-> A randomized training algorithm $A$ taking as input a dataset is said to be $(\epsilon, \delta)$*-label differentially private* ($(\epsilon, \delta)\text{-LabelDP}$) if for any two training datasets $D$ and $D^{\prime}$ that differ in the label of a single example, and for any subset $S$ of outputs of $A$, it is the case that $Pr[A(D) \in S] \leq e^{\epsilon} \cdot Pr[A(D^{\prime}) \in S] + \delta$. If $\delta=0$, then $A$ is said to be $\epsilon$ -label differentially private ($\epsilon\text{-LabelDP}$).
+Our definition of $(\epsilon, \delta)$-label differential privacy is the standard: A randomized training algorithm $A$ taking as input a dataset is said to be $(\epsilon, \delta)$*-label differentially private* ($(\epsilon, \delta)\text{-LabelDP}$) if for any two training datasets $D$ and $D^{\prime}$ that differ in the label of a single example, and for any subset $S$ of outputs of $A$, it is the case that $Pr[A(D) \in S] \leq e^{\epsilon} \cdot Pr[A(D^{\prime}) \in S] + \delta$. If $\delta=0$, then $A$ is said to be $\epsilon$ -label differentially private ($\epsilon\text{-LabelDP}$).
 
 In the presence of a private measurement system that computes the (non-private) **dot-product** vector, label-DP can be achieved via a single-occurrence output perturbation of the form:
 
