@@ -2,6 +2,8 @@
 
 IPA is a [Private Measurement proposal](https://github.com/patcg/private-measurement) for the W3C's [Private Advertising Technology Community Group (PATCG.)](https://github.com/patcg/).
 
+<b>The IPA proposal has been superseded by [Privacy-Preserving Attribution: Level 1](https://w3c.github.io/ppa/) ([repo](https://github.com/w3c/ppa)) and ongoing work to design a Level 2 spec happening under the [Hybrid Proposal](https://github.com/patcg-individual-drafts/hybrid-proposal).</b>
+
 ## Latest Protocol Draft
 [IPA End to End](IPA-End-to-End.md) is our latest version of the proposal.
 
