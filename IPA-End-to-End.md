@@ -46,6 +46,13 @@ This document provides an end-to-end overview of that protocol, focusing primari
     * [Oblivious Last Touch Attribution](#oblivious-last-touch-attribution)
     * [User Level Sensitivity Capping](#user-level-sensitivity-capping)
     * [Computing the Aggregates](#computing-the-aggregates)
+* [Event Labeling Queries witth per matchkey DP bound](#event-labeling-queries-with-per-matchkey-dp-bound)
+  * [Source site differences](#source-site-differences)
+  * [Input/Output Structure](#inputoutput-structure)
+  * [Query Stages for Event Labeling Queries](#query-stages-for-event-labeling-queries)
+  * [Example](#example)
+  * [Per matchkey DP bound](#per-matchkey-dp-bound)
+  * [Budgeting for both aggregation and event labeling queries](#budgeting-for-both-aggregation-and-event-labeling-queries)
 * [Technical Discussion and Remarks](#technical-discussion-and-remarks)
   * [Optimizations](#optimizations)
     * [Two Party Secret Sharing](#two-party-secret-sharing)
@@ -1905,6 +1912,243 @@ After the final iteration, we can then sum up the credit for each _breakdown key
 After computing the aggregates within each category, the _helper parties_ P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> generate additive noise to ensure DP on the user level. The amount of noise added depends on the sensitivity, i.e., on the cap of how much an individual _match key_ owner can contribute.
 
 The noise is generated within an MPC protocol. This could be done by having each party sample noise independently then add it to the secret shared aggregated value. This is a simple approach but has the drawback that the privacy guarantees in case of a corrupted MPC party are lower since the corrupted party will know their share of the noise and deduct it from the aggregated value. A better but more complicated approach is to run a secure coin tossing protocol between parties P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> where the coins are private and then use these coins to run a noise sampling algorithm within MPC to generate secret shares of the DP noise. This noise is then added to the secret shared aggregated value. Using the second approach, a malicious party cannot manipulate the protocol to see a noisy aggregated value with less noise. Hence, the privacy guarantees match the amount of DP noise generated and added as specified in the protocol description even when one party is malicious.
+
+
+
+
+# Event Labeling Queries with per matchkey DP bound
+
+There has been considerable interest in supporting event level outputs in IPA ([IPA issue 60](https://github.com/patcg-individual-drafts/ipa/issues/60), [PATCG issue 41](https://github.com/patcg/docs-and-reports/issues/41)).  This was discussed at the May 2023 PATCG meeting where the [consensus ](https://github.com/patcg/docs-and-reports/pull/43)was we could support this so long as we can enforce a per user bound on the information released.
+
+Here we outline how an Event Labeling Query that labels events with noisy labels can be done in a way that lets us maintain a per matchkey DP bound.  We also consider how these new queries can be compatible with an IPA system that flexibly supports either aggregation queries or event labeling queries.
+
+
+## Source site differences
+
+There are two settings for a source site
+
+1. A source site that knows who it is showing ads to and can tie together source reports belonging to the same person. This would be the case of a publisher website with logged-in users.
+2. A source site, such as an ad-network, that shows ads across many different websites and doesn’t necessarily know when it is showing an ad to the same person.
+
+We design two different Event Labeling Queries that can support these settings.  In the first setting the source site can (with pretty high confidence) supply the same number of source reports per matchkey. The MPC will label all of the events scaling the noise by the number of reports per matchkey.
+
+In the second setting a Report Collector will not know in advance how many source reports are for the same matchkey. In this case the RC will specify a cap on the number of source events it wants labeled per matchkey.  This allows the noise for each of these events to be scaled by the cap and thus the noise level added will be known to the Report Collector which is useful in debiasing downstream uses of the data.   To help support the second setting, we can also output some Reach & Frequency statistics to let the Report Collector learn about how many actual users were present in their set of source reports. This will inform them about how many events exceeded the cap and we labeled as zeros before having the noise applied.
+
+
+## Input/Output Structure
+
+In an Event Labeling Query, a source site submits a source fan-out query where the source reports contain the encrypted matchkey and timestamp as well as a source_id, which is a unique index to identify this report back to the source site’s user.  The source site gets as output a row for every source report submitted with each output consisting of the source_id and a label. The label is either 0 or 1.
+
+
+![Inputs and Outputs of Event Labeling Queries](ipa-end-to-end-images/image2.png "image_tooltip")
+
+
+
+
+**Query Inputs:**
+
+
+
+* Source reports (is_trigger, matchkey, timestamp, source_id)
+* Trigger reports (is_trigger, matchkey, timestamp)
+* DP budget for this query: query_epsilon
+* Cap (optional; if no cap is supplied the noise will scale with the number of reports per matchkey)
+
+**Query Output:**
+
+
+
+* A row for every source report:  (source_id, label) where label in {0,1}
+
+In each query we will count the number of source reports per matchkey and use this to scale the noise for labeling that user’s events, so as to maintain a constant per user information release.
+
+
+## Query Stages for Event Labeling Queries
+
+The stages of the query are as follows where the first two are the same as in regular IPA aggregation queries:
+
+* Report Collector can presort by timestamp
+* Sort by matchkey in the MPC
+* Attribution
+    * Source rows will be labeled as attributed, 1, or not attributed, 0, by some attribution logic that attributes trigger events to earlier source events.  It seems we should be able to support any attribution logic here.
+* Label Flipping; we consider two methods
+    * No Cap Supplied:
+       * First we count the number of source reports that share the same matchkey, call this matchkey_source_count.
+       * For every source row with probability p we asign its label randomly from {0,1}, otherwise leave it unchanged.  The p is derived from (query_epsilon / matchkey_source_count ) as p = 2 ( 2 - 1 + e^(query_epsilon / matchkey_source_count ))
+    * Cap Supplied:
+       *  For source rows with the same matchkey asign the attributed label for as many rows up to the cap for a matchkey. If there are more than the cap number of source rows for a matchkey, the excess ones are labeled as 0s.
+       *  or every source row with probability p we asign its label randomly from {0,1}, otherwise leave it unchanged.  The p is derived from (query_epsilon / cap ) as p = 2 ( 2 - 1 + e^(query_epsilon / cap ))
+* Output (source_id, label) to the Report Collector
+
+
+## Example
+
+Consider the following example where we perform last touch attribution and cap the number of source events labeled per matchkey at 3.
+
+
+<table>
+  <tr>
+   <td><strong>Timestamp </strong>
+   </td>
+   <td><strong>Matchkey </strong>
+   </td>
+   <td><strong>source_id</strong>
+   </td>
+   <td><strong>is_trigger</strong>
+   </td>
+   <td><strong>Label </strong>
+   </td>
+   <td><strong>Noisy label </strong>
+   </td>
+  </tr>
+  <tr>
+   <td>110
+   </td>
+   <td>AAA
+   </td>
+   <td>58934
+   </td>
+   <td>0
+   </td>
+   <td>1
+   </td>
+   <td>1 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>230
+   </td>
+   <td>AAA
+   </td>
+   <td>NA
+   </td>
+   <td>1
+   </td>
+   <td>
+   </td>
+   <td>
+   </td>
+  </tr>
+  <tr>
+   <td>002
+   </td>
+   <td>CCC
+   </td>
+   <td>67654
+   </td>
+   <td>0
+   </td>
+   <td>0
+   </td>
+   <td>0 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>030
+   </td>
+   <td>CCC
+   </td>
+   <td>76643
+   </td>
+   <td>0
+   </td>
+   <td>0
+   </td>
+   <td>0 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>485
+   </td>
+   <td>CCC
+   </td>
+   <td>66322
+   </td>
+   <td>0
+   </td>
+   <td>1
+   </td>
+   <td>1 (to be flipped with prob derived from query_epsilon / 3)
+   </td>
+  </tr>
+  <tr>
+   <td>672
+   </td>
+   <td>CCC
+   </td>
+   <td>NA
+   </td>
+   <td>1
+   </td>
+   <td>
+   </td>
+   <td>
+   </td>
+  </tr>
+</table>
+
+
+**Output to Report Collector:**
+
+
+<table>
+  <tr>
+   <td><strong>source_id</strong>
+   </td>
+   <td><strong>Noisy label </strong>
+   </td>
+  </tr>
+  <tr>
+   <td>58934
+   </td>
+   <td>1
+   </td>
+  </tr>
+  <tr>
+   <td>67654
+   </td>
+   <td>1 (flipped)
+   </td>
+  </tr>
+  <tr>
+   <td>76643
+   </td>
+   <td>0
+   </td>
+  </tr>
+  <tr>
+   <td>66322
+   </td>
+   <td>1
+   </td>
+  </tr>
+</table>
+
+
+
+## Per matchkey DP bound
+
+In order to bound the amount of information released about a matchkey (which is our best approximation of a user in the system) per epoch we needed to do two things:
+
+1. Deduct from the per epoch budget for each query
+2. Within each query ensure that all the labeled events released for a matchkey don’t exceed that particular query’s budget.
+   * In the case without a cap, we do this by letting the probability for each event’s flip be derived from an epsilon of (query epsilon / number of events labeled per matchkey).
+    * In the case with a cap, we do this by capping the number of events labeled and letting the probability for each event’s flip be derived from an epsilon of (query epsilon / cap).
+
+A nice property is that we do not need to rate limit report creation on-device or limit replays of reports.
+
+### Proof for capping case
+Consider two databases D and D' that are adjacent. After rate-limiting to sensitivity, a users contribution will look like $(x_1, x_2, ... x_n)$ and $(x_1', x_2', ..., x_n')$ for n events, where the value at any $x_i$ is the label. After capping, these vectors will differ on at most $s$. If you consider an output of $(y_1, ..., y_n)$, then we have $$\frac{Pr[y_1,...,y_n | x'_1,...x'_n]}{Pr[y_1,...,y_n | x_1,...x_n]} = \prod_{i=1}^{n}{\frac{Pr[y_i | x'_i]}{Pr[y_i | x_i]}}
+=  \prod_{i \in differing\_rows}{\frac{Pr[y_i | x'_i]}{Pr[y_i | x_i]}}$$
+That is, we can analyze each of the $s$ differing columns independently, and if you can show that the mechanism on a single column is bounded by $e^\epsilon$ it implies the whole mechanism is $s \epsilon$-differentially private.  (This is with an add-remove notion of DP that will just strip conversions for a converting user or add fake conversions for a non-converting user. With a "replacement" notion of DP that merely modifies the conversion patterns for a user the rows will differ on $2s$ values and everything goes through with a factor of 2 in the bound.)
+
+## Budgeting for both aggregation and event labeling queries
+
+As Charlie pointed out in his [presentation](https://docs.google.com/presentation/d/1Cc8_S46m4-z8o_dM4egYSSEyHxc-bGinSw_Say_93uA/edit#slide=id.g21ee318a45e_0_52), it would be nice to have the flexibility to choose between composition using labeled events or using central DP as the utility may vary depending on the number of queries and use case within the same epsilon budget.
+
+In particular, we would like the IPA system to support both aggregation queries and event labeling queries. It seems that the above construction enables this if both types of queries deduct from the same per epoch budget.
+
+Also the same encrypted match key returned by `get_encrypted_matchkey()` can be used for these Event Labeling Queries or for regular Aggregation Queries.  The report collector will just add different associated data to form the reports to be sent into the MPC.
 
 
 # Technical Discussion and Remarks
